@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { MoodSelector } from "@/components/MoodSelector";
 import { GenreSelector } from "@/components/GenreSelector";
@@ -7,6 +6,12 @@ import { TimePeriodSelector } from "@/components/TimePeriodSelector";
 import { MovieCard } from "@/components/MovieCard";
 import { Movie, Mood, Genre, ContentType, TimePeriod } from "@/types/movie";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 // Temporary mock data until we integrate with OpenAI and TMDb
 const mockMovies: Movie[] = [
@@ -79,7 +84,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F1F0FB] text-foreground">
+    <div className="min-h-screen bg-[#1F1F1F] text-white">
       <main className="container py-8 space-y-8">
         <div className="text-center space-y-4 animate-fadeIn">
           <h1 className="text-4xl font-bold tracking-tight">Moodflix</h1>
@@ -89,33 +94,49 @@ const Index = () => {
         </div>
 
         <section className="space-y-12">
-          <div className="space-y-8">
-            <div className="text-center space-y-4">
-              <h2 className="text-2xl font-semibold">How are you feeling today?</h2>
-              <MoodSelector selectedMood={selectedMood} onSelect={handleMoodSelect} />
-            </div>
+          <Accordion type="single" collapsible className="w-full space-y-4">
+            <AccordionItem value="mood">
+              <AccordionTrigger className="text-2xl font-semibold">
+                How are you feeling today?
+              </AccordionTrigger>
+              <AccordionContent>
+                <MoodSelector selectedMood={selectedMood} onSelect={handleMoodSelect} />
+              </AccordionContent>
+            </AccordionItem>
 
-            <div className="text-center space-y-4">
-              <h2 className="text-2xl font-semibold">What genres do you enjoy?</h2>
-              <GenreSelector selectedGenres={selectedGenres} onSelect={handleGenreSelect} />
-            </div>
+            <AccordionItem value="genres">
+              <AccordionTrigger className="text-2xl font-semibold">
+                What genres do you enjoy?
+              </AccordionTrigger>
+              <AccordionContent>
+                <GenreSelector selectedGenres={selectedGenres} onSelect={handleGenreSelect} />
+              </AccordionContent>
+            </AccordionItem>
 
-            <div className="text-center space-y-4">
-              <h2 className="text-2xl font-semibold">What type of content?</h2>
-              <ContentTypeSelector
-                selectedType={selectedContentType}
-                onSelect={handleContentTypeSelect}
-              />
-            </div>
+            <AccordionItem value="contentType">
+              <AccordionTrigger className="text-2xl font-semibold">
+                What type of content?
+              </AccordionTrigger>
+              <AccordionContent>
+                <ContentTypeSelector
+                  selectedType={selectedContentType}
+                  onSelect={handleContentTypeSelect}
+                />
+              </AccordionContent>
+            </AccordionItem>
 
-            <div className="text-center space-y-4">
-              <h2 className="text-2xl font-semibold">From which era?</h2>
-              <TimePeriodSelector
-                selectedPeriod={selectedTimePeriod}
-                onSelect={handleTimePeriodSelect}
-              />
-            </div>
-          </div>
+            <AccordionItem value="timePeriod">
+              <AccordionTrigger className="text-2xl font-semibold">
+                From which era?
+              </AccordionTrigger>
+              <AccordionContent>
+                <TimePeriodSelector
+                  selectedPeriod={selectedTimePeriod}
+                  onSelect={handleTimePeriodSelect}
+                />
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
 
           {(selectedMood || selectedGenres.length > 0 || selectedContentType || selectedTimePeriod) && (
             <div className="space-y-4 animate-slideUp">
