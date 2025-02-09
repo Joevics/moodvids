@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { MoodSelector } from "@/components/MoodSelector";
 import { GenreSelector } from "@/components/GenreSelector";
@@ -209,7 +210,7 @@ const Index = () => {
                 Here's what we recommend
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                {movies.map((movie) => (
+                {mockMovies.map((movie) => (
                   <MovieCard key={movie.id} movie={movie} onWatch={handleWatch} />
                 ))}
               </div>

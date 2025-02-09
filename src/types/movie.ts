@@ -35,6 +35,22 @@ export type ContentType = "movie" | "tv" | "anime" | "documentary";
 
 export type TimePeriod = "classic" | "90s" | "2000s" | "latest";
 
+export type Language = 
+  | "english"
+  | "spanish"
+  | "french"
+  | "korean"
+  | "japanese"
+  | "chinese";
+
+export type StreamingService = 
+  | "netflix"
+  | "disney"
+  | "prime"
+  | "hulu"
+  | "hbo"
+  | "apple";
+
 export interface UserPreferences {
   mood?: Mood;
   genres?: Genre[];
