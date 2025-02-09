@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { MoodSelector } from "@/components/MoodSelector";
 import { GenreSelector } from "@/components/GenreSelector";
@@ -10,6 +9,7 @@ import { PersonSelector } from "@/components/PersonSelector";
 import { MovieCard } from "@/components/MovieCard";
 import { Movie, Mood, Genre, ContentType, TimePeriod, Language, StreamingService } from "@/types/movie";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 import {
   Accordion,
   AccordionContent,
@@ -50,6 +50,7 @@ const Index = () => {
   const [selectedLanguages, setSelectedLanguages] = useState<Language[]>([]);
   const [selectedServices, setSelectedServices] = useState<StreamingService[]>([]);
   const [selectedPeople, setSelectedPeople] = useState<string[]>([]);
+  const [showRecommendations, setShowRecommendations] = useState(false);
   const { toast } = useToast();
 
   const handleMoodSelect = (mood: Mood) => {
@@ -115,6 +116,14 @@ const Index = () => {
     console.log("Movie watched:", movie);
   };
 
+  const handleGetRecommendations = () => {
+    setShowRecommendations(true);
+    toast({
+      title: "Generating recommendations",
+      description: "Finding the perfect content based on your preferences...",
+    });
+  };
+
   return (
     <div className="min-h-screen bg-[#1F1F1F] text-white">
       <main className="container py-8 space-y-8">
@@ -131,80 +140,57 @@ const Index = () => {
             <MoodSelector selectedMood={selectedMood} onSelect={handleMoodSelect} />
           </div>
 
-          <Accordion type="single" collapsible className="w-full space-y-4">
-            <AccordionItem value="genres">
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="advanced">
               <AccordionTrigger className="text-xl font-medium text-center justify-center">
-                Genre Preferences
+                Advanced Search Options
               </AccordionTrigger>
               <AccordionContent>
-                <GenreSelector selectedGenres={selectedGenres} onSelect={handleGenreSelect} />
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="contentType">
-              <AccordionTrigger className="text-xl font-medium text-center justify-center">
-                Content Type
-              </AccordionTrigger>
-              <AccordionContent>
-                <ContentTypeSelector
-                  selectedType={selectedContentType}
-                  onSelect={handleContentTypeSelect}
-                />
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="timePeriod">
-              <AccordionTrigger className="text-xl font-medium text-center justify-center">
-                Time Period
-              </AccordionTrigger>
-              <AccordionContent>
-                <TimePeriodSelector
-                  selectedPeriod={selectedTimePeriod}
-                  onSelect={handleTimePeriodSelect}
-                />
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="language">
-              <AccordionTrigger className="text-xl font-medium text-center justify-center">
-                Language Preferences
-              </AccordionTrigger>
-              <AccordionContent>
-                <LanguageSelector
-                  selectedLanguages={selectedLanguages}
-                  onSelect={handleLanguageSelect}
-                />
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="streaming">
-              <AccordionTrigger className="text-xl font-medium text-center justify-center">
-                Streaming Services
-              </AccordionTrigger>
-              <AccordionContent>
-                <StreamingSelector
-                  selectedServices={selectedServices}
-                  onSelect={handleServiceSelect}
-                />
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="people">
-              <AccordionTrigger className="text-xl font-medium text-center justify-center">
-                Actors & Directors
-              </AccordionTrigger>
-              <AccordionContent>
-                <PersonSelector
-                  selectedPeople={selectedPeople}
-                  onAdd={handleAddPerson}
-                  onRemove={handleRemovePerson}
-                />
+                <div className="space-y-8">
+                  <div className="overflow-x-auto pb-4">
+                    <div className="flex space-x-8 min-w-max px-4">
+                      <div className="w-72">
+                        <h3 className="text-lg font-medium mb-4 text-center">Genres</h3>
+                        <GenreSelector selectedGenres={selectedGenres} onSelect={handleGenreSelect} />
+                      </div>
+                      <div className="w-72">
+                        <h3 className="text-lg font-medium mb-4 text-center">Content Type</h3>
+                        <ContentTypeSelector selectedType={selectedContentType} onSelect={handleContentTypeSelect} />
+                      </div>
+                      <div className="w-72">
+                        <h3 className="text-lg font-medium mb-4 text-center">Time Period</h3>
+                        <TimePeriodSelector selectedPeriod={selectedTimePeriod} onSelect={handleTimePeriodSelect} />
+                      </div>
+                      <div className="w-72">
+                        <h3 className="text-lg font-medium mb-4 text-center">Language</h3>
+                        <LanguageSelector selectedLanguages={selectedLanguages} onSelect={handleLanguageSelect} />
+                      </div>
+                      <div className="w-72">
+                        <h3 className="text-lg font-medium mb-4 text-center">Streaming Services</h3>
+                        <StreamingSelector selectedServices={selectedServices} onSelect={handleServiceSelect} />
+                      </div>
+                      <div className="w-72">
+                        <h3 className="text-lg font-medium mb-4 text-center">Cast & Crew</h3>
+                        <PersonSelector selectedPeople={selectedPeople} onAdd={handleAddPerson} onRemove={handleRemovePerson} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </AccordionContent>
             </AccordionItem>
           </Accordion>
 
-          {(selectedMood || selectedGenres.length > 0 || selectedContentType || selectedTimePeriod || 
-            selectedLanguages.length > 0 || selectedServices.length > 0 || selectedPeople.length > 0) && (
+          <div className="text-center">
+            <Button 
+              size="lg"
+              onClick={handleGetRecommendations}
+              className="bg-primary hover:bg-primary/90 text-white px-8"
+            >
+              Get Recommendations
+            </Button>
+          </div>
+
+          {showRecommendations && (
             <div className="space-y-4 animate-slideUp">
               <h2 className="text-2xl font-semibold text-center">
                 Here's what we recommend
