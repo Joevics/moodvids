@@ -1,0 +1,40 @@
+
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { StreamingService } from "@/types/movie";
+import { PlayCircle } from "lucide-react";
+
+interface StreamingSelectorProps {
+  selectedServices: StreamingService[];
+  onSelect: (service: StreamingService) => void;
+}
+
+const services: { value: StreamingService; label: string }[] = [
+  { value: "netflix", label: "Netflix" },
+  { value: "disney", label: "Disney+" },
+  { value: "prime", label: "Prime Video" },
+  { value: "hulu", label: "Hulu" },
+  { value: "hbo", label: "HBO Max" },
+  { value: "apple", label: "Apple TV+" },
+];
+
+export const StreamingSelector = ({ selectedServices, onSelect }: StreamingSelectorProps) => {
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-3xl mx-auto animate-fadeIn">
+      {services.map(({ value, label }) => (
+        <Button
+          key={value}
+          variant="outline"
+          className={cn(
+            "h-12 relative overflow-hidden transition-all duration-300",
+            selectedServices.includes(value) && "border-primary bg-primary/10"
+          )}
+          onClick={() => onSelect(value)}
+        >
+          <PlayCircle className="w-4 h-4 mr-2" />
+          <span className="font-medium">{label}</span>
+        </Button>
+      ))}
+    </div>
+  );
+};

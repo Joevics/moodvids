@@ -3,8 +3,11 @@ import { MoodSelector } from "@/components/MoodSelector";
 import { GenreSelector } from "@/components/GenreSelector";
 import { ContentTypeSelector } from "@/components/ContentTypeSelector";
 import { TimePeriodSelector } from "@/components/TimePeriodSelector";
+import { LanguageSelector } from "@/components/LanguageSelector";
+import { StreamingSelector } from "@/components/StreamingSelector";
+import { PersonSelector } from "@/components/PersonSelector";
 import { MovieCard } from "@/components/MovieCard";
-import { Movie, Mood, Genre, ContentType, TimePeriod } from "@/types/movie";
+import { Movie, Mood, Genre, ContentType, TimePeriod, Language, StreamingService } from "@/types/movie";
 import { useToast } from "@/hooks/use-toast";
 import {
   Accordion,
@@ -43,7 +46,9 @@ const Index = () => {
   const [selectedGenres, setSelectedGenres] = useState<Genre[]>([]);
   const [selectedContentType, setSelectedContentType] = useState<ContentType>();
   const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>();
-  const [movies, setMovies] = useState<Movie[]>(mockMovies);
+  const [selectedLanguages, setSelectedLanguages] = useState<Language[]>([]);
+  const [selectedServices, setSelectedServices] = useState<StreamingService[]>([]);
+  const [selectedPeople, setSelectedPeople] = useState<string[]>([]);
   const { toast } = useToast();
 
   const handleMoodSelect = (mood: Mood) => {
@@ -78,6 +83,32 @@ const Index = () => {
     });
   };
 
+  const handleLanguageSelect = (language: Language) => {
+    setSelectedLanguages((prev) =>
+      prev.includes(language)
+        ? prev.filter((l) => l !== language)
+        : [...prev, language]
+    );
+  };
+
+  const handleServiceSelect = (service: StreamingService) => {
+    setSelectedServices((prev) =>
+      prev.includes(service)
+        ? prev.filter((s) => s !== service)
+        : [...prev, service]
+    );
+  };
+
+  const handleAddPerson = (person: string) => {
+    if (!selectedPeople.includes(person)) {
+      setSelectedPeople((prev) => [...prev, person]);
+    }
+  };
+
+  const handleRemovePerson = (person: string) => {
+    setSelectedPeople((prev) => prev.filter((p) => p !== person));
+  };
+
   const handleWatch = (movie: Movie) => {
     // Here we'll later integrate with database to save watch history
     console.log("Movie watched:", movie);
@@ -94,19 +125,15 @@ const Index = () => {
         </div>
 
         <section className="space-y-12">
-          <Accordion type="single" collapsible className="w-full space-y-4">
-            <AccordionItem value="mood">
-              <AccordionTrigger className="text-2xl font-semibold">
-                How are you feeling today?
-              </AccordionTrigger>
-              <AccordionContent>
-                <MoodSelector selectedMood={selectedMood} onSelect={handleMoodSelect} />
-              </AccordionContent>
-            </AccordionItem>
+          <div className="text-center space-y-4">
+            <h2 className="text-2xl font-semibold">How are you feeling today?</h2>
+            <MoodSelector selectedMood={selectedMood} onSelect={handleMoodSelect} />
+          </div>
 
+          <Accordion type="single" collapsible className="w-full space-y-4">
             <AccordionItem value="genres">
-              <AccordionTrigger className="text-2xl font-semibold">
-                What genres do you enjoy?
+              <AccordionTrigger className="text-xl font-medium text-center justify-center">
+                Genre Preferences
               </AccordionTrigger>
               <AccordionContent>
                 <GenreSelector selectedGenres={selectedGenres} onSelect={handleGenreSelect} />
@@ -114,8 +141,8 @@ const Index = () => {
             </AccordionItem>
 
             <AccordionItem value="contentType">
-              <AccordionTrigger className="text-2xl font-semibold">
-                What type of content?
+              <AccordionTrigger className="text-xl font-medium text-center justify-center">
+                Content Type
               </AccordionTrigger>
               <AccordionContent>
                 <ContentTypeSelector
@@ -126,8 +153,8 @@ const Index = () => {
             </AccordionItem>
 
             <AccordionItem value="timePeriod">
-              <AccordionTrigger className="text-2xl font-semibold">
-                From which era?
+              <AccordionTrigger className="text-xl font-medium text-center justify-center">
+                Time Period
               </AccordionTrigger>
               <AccordionContent>
                 <TimePeriodSelector
@@ -136,9 +163,47 @@ const Index = () => {
                 />
               </AccordionContent>
             </AccordionItem>
+
+            <AccordionItem value="language">
+              <AccordionTrigger className="text-xl font-medium text-center justify-center">
+                Language Preferences
+              </AccordionTrigger>
+              <AccordionContent>
+                <LanguageSelector
+                  selectedLanguages={selectedLanguages}
+                  onSelect={handleLanguageSelect}
+                />
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="streaming">
+              <AccordionTrigger className="text-xl font-medium text-center justify-center">
+                Streaming Services
+              </AccordionTrigger>
+              <AccordionContent>
+                <StreamingSelector
+                  selectedServices={selectedServices}
+                  onSelect={handleServiceSelect}
+                />
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="people">
+              <AccordionTrigger className="text-xl font-medium text-center justify-center">
+                Actors & Directors
+              </AccordionTrigger>
+              <AccordionContent>
+                <PersonSelector
+                  selectedPeople={selectedPeople}
+                  onAdd={handleAddPerson}
+                  onRemove={handleRemovePerson}
+                />
+              </AccordionContent>
+            </AccordionItem>
           </Accordion>
 
-          {(selectedMood || selectedGenres.length > 0 || selectedContentType || selectedTimePeriod) && (
+          {(selectedMood || selectedGenres.length > 0 || selectedContentType || selectedTimePeriod || 
+            selectedLanguages.length > 0 || selectedServices.length > 0 || selectedPeople.length > 0) && (
             <div className="space-y-4 animate-slideUp">
               <h2 className="text-2xl font-semibold text-center">
                 Here's what we recommend
