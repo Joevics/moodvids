@@ -1,7 +1,59 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { Movie, Mood, Genre, ContentType, TimePeriod, Language, StreamingService } from "../../../src/types/movie.ts";
+
+// Define types directly in the edge function
+type Mood =
+  | "happy"
+  | "sad"
+  | "excited"
+  | "romantic"
+  | "nostalgic"
+  | "adventurous"
+  | "relaxed"
+  | "inspired";
+
+type Genre =
+  | "action"
+  | "comedy"
+  | "drama"
+  | "horror"
+  | "sci-fi"
+  | "fantasy"
+  | "romance"
+  | "thriller"
+  | "documentary";
+
+type ContentType = "movie" | "tv" | "anime" | "documentary";
+
+type TimePeriod = "classic" | "90s" | "2000s" | "latest";
+
+type Language = 
+  | "english"
+  | "spanish"
+  | "french"
+  | "korean"
+  | "japanese"
+  | "chinese";
+
+type StreamingService = 
+  | "netflix"
+  | "disney"
+  | "prime"
+  | "hulu"
+  | "hbo"
+  | "apple";
+
+interface Movie {
+  id: number;
+  title: string;
+  overview: string;
+  poster_path: string;
+  release_date: string;
+  vote_average: number;
+  genres: string[];
+  providers?: string[];
+}
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
@@ -32,6 +84,8 @@ serve(async (req) => {
     prompt += '{"title": "Movie Title", "overview": "Brief description", "genres": ["Genre1", "Genre2"], "release_date": "YYYY-MM-DD"}';
     prompt += "\nEnsure diversity in genres, release years, and languages. Avoid overly mainstream movies unless specifically requested.";
 
+    console.log('Sending prompt to OpenAI:', prompt);
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -51,6 +105,8 @@ serve(async (req) => {
     });
 
     const data = await response.json();
+    console.log('OpenAI response:', data);
+
     const recommendationsText = data.choices[0].message.content;
     
     try {
@@ -59,6 +115,7 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     } catch (e) {
+      console.error('Error parsing recommendations:', e);
       // If the response isn't valid JSON, try to extract array of movies from the text
       const moviesMatch = recommendationsText.match(/\[[\s\S]*\]/);
       if (moviesMatch) {
