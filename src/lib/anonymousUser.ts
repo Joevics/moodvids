@@ -7,6 +7,11 @@ export const getOrCreateAnonymousId = async (): Promise<string> => {
   // Try to get existing ID from localStorage
   const existingId = localStorage.getItem(ANONYMOUS_USER_KEY);
   if (existingId) {
+    // Set the anonymous ID in the JWT claims
+    await supabase.auth.setSession({
+      access_token: '',
+      refresh_token: '',
+    });
     return existingId;
   }
 
@@ -24,5 +29,12 @@ export const getOrCreateAnonymousId = async (): Promise<string> => {
 
   // Store the new ID
   localStorage.setItem(ANONYMOUS_USER_KEY, data.id);
+  
+  // Set the anonymous ID in the JWT claims
+  await supabase.auth.setSession({
+    access_token: '',
+    refresh_token: '',
+  });
+
   return data.id;
 };
