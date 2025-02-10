@@ -10,6 +10,7 @@ import { MovieCard } from "@/components/MovieCard";
 import { Movie, Mood, Genre, ContentType, TimePeriod, Language, StreamingService } from "@/types/movie";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -44,61 +45,37 @@ const mockMovies: Movie[] = [
 
 const Index = () => {
   const [selectedMood, setSelectedMood] = useState<Mood>();
-  const [selectedGenres, setSelectedGenres] = useState<Genre[]>([]);
+  const [selectedGenre, setSelectedGenre] = useState<Genre>();
   const [selectedContentType, setSelectedContentType] = useState<ContentType>();
   const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>();
-  const [selectedLanguages, setSelectedLanguages] = useState<Language[]>([]);
-  const [selectedServices, setSelectedServices] = useState<StreamingService[]>([]);
+  const [selectedLanguage, setSelectedLanguage] = useState<Language>();
+  const [selectedService, setSelectedService] = useState<StreamingService>();
   const [selectedPeople, setSelectedPeople] = useState<string[]>([]);
   const [showRecommendations, setShowRecommendations] = useState(false);
   const { toast } = useToast();
 
   const handleMoodSelect = (mood: Mood) => {
     setSelectedMood(mood);
-    toast({
-      title: "Mood selected",
-      description: `Finding content for when you're feeling ${mood}...`,
-    });
   };
 
   const handleGenreSelect = (genre: Genre) => {
-    setSelectedGenres((prev) =>
-      prev.includes(genre)
-        ? prev.filter((g) => g !== genre)
-        : [...prev, genre]
-    );
+    setSelectedGenre(genre);
   };
 
   const handleContentTypeSelect = (type: ContentType) => {
     setSelectedContentType(type);
-    toast({
-      title: "Content type selected",
-      description: `Looking for ${type} content...`,
-    });
   };
 
   const handleTimePeriodSelect = (period: TimePeriod) => {
     setSelectedTimePeriod(period);
-    toast({
-      title: "Time period selected",
-      description: `Finding content from the ${period}...`,
-    });
   };
 
   const handleLanguageSelect = (language: Language) => {
-    setSelectedLanguages((prev) =>
-      prev.includes(language)
-        ? prev.filter((l) => l !== language)
-        : [...prev, language]
-    );
+    setSelectedLanguage(language);
   };
 
   const handleServiceSelect = (service: StreamingService) => {
-    setSelectedServices((prev) =>
-      prev.includes(service)
-        ? prev.filter((s) => s !== service)
-        : [...prev, service]
-    );
+    setSelectedService(service);
   };
 
   const handleAddPerson = (person: string) => {
@@ -109,11 +86,6 @@ const Index = () => {
 
   const handleRemovePerson = (person: string) => {
     setSelectedPeople((prev) => prev.filter((p) => p !== person));
-  };
-
-  const handleWatch = (movie: Movie) => {
-    // Here we'll later integrate with database to save watch history
-    console.log("Movie watched:", movie);
   };
 
   const handleGetRecommendations = () => {
@@ -147,33 +119,53 @@ const Index = () => {
               </AccordionTrigger>
               <AccordionContent>
                 <div className="space-y-8">
-                  <div className="overflow-x-auto pb-4">
-                    <div className="flex space-x-8 min-w-max px-4">
-                      <div className="w-72">
-                        <h3 className="text-lg font-medium mb-4 text-center">Genres</h3>
-                        <GenreSelector selectedGenres={selectedGenres} onSelect={handleGenreSelect} />
-                      </div>
-                      <div className="w-72">
-                        <h3 className="text-lg font-medium mb-4 text-center">Content Type</h3>
-                        <ContentTypeSelector selectedType={selectedContentType} onSelect={handleContentTypeSelect} />
-                      </div>
-                      <div className="w-72">
-                        <h3 className="text-lg font-medium mb-4 text-center">Time Period</h3>
-                        <TimePeriodSelector selectedPeriod={selectedTimePeriod} onSelect={handleTimePeriodSelect} />
-                      </div>
-                      <div className="w-72">
-                        <h3 className="text-lg font-medium mb-4 text-center">Language</h3>
-                        <LanguageSelector selectedLanguages={selectedLanguages} onSelect={handleLanguageSelect} />
-                      </div>
-                      <div className="w-72">
-                        <h3 className="text-lg font-medium mb-4 text-center">Streaming Services</h3>
-                        <StreamingSelector selectedServices={selectedServices} onSelect={handleServiceSelect} />
-                      </div>
-                      <div className="w-72">
-                        <h3 className="text-lg font-medium mb-4 text-center">Cast & Crew</h3>
-                        <PersonSelector selectedPeople={selectedPeople} onAdd={handleAddPerson} onRemove={handleRemovePerson} />
+                  <div className="relative">
+                    <div className="overflow-x-auto pb-4 scroll-smooth" id="advancedSearch">
+                      <div className="flex space-x-8 min-w-max px-4">
+                        <div className="w-72">
+                          <h3 className="text-lg font-medium mb-4 text-center">Genres</h3>
+                          <GenreSelector selectedGenres={selectedGenre ? [selectedGenre] : []} onSelect={handleGenreSelect} />
+                        </div>
+                        <div className="w-72">
+                          <h3 className="text-lg font-medium mb-4 text-center">Content Type</h3>
+                          <ContentTypeSelector selectedType={selectedContentType} onSelect={handleContentTypeSelect} />
+                        </div>
+                        <div className="w-72">
+                          <h3 className="text-lg font-medium mb-4 text-center">Time Period</h3>
+                          <TimePeriodSelector selectedPeriod={selectedTimePeriod} onSelect={handleTimePeriodSelect} />
+                        </div>
+                        <div className="w-72">
+                          <h3 className="text-lg font-medium mb-4 text-center">Language</h3>
+                          <LanguageSelector selectedLanguages={selectedLanguage ? [selectedLanguage] : []} onSelect={handleLanguageSelect} />
+                        </div>
+                        <div className="w-72">
+                          <h3 className="text-lg font-medium mb-4 text-center">Streaming Services</h3>
+                          <StreamingSelector selectedServices={selectedService ? [selectedService] : []} onSelect={handleServiceSelect} />
+                        </div>
+                        <div className="w-72">
+                          <h3 className="text-lg font-medium mb-4 text-center">Cast & Crew</h3>
+                          <PersonSelector selectedPeople={selectedPeople} onAdd={handleAddPerson} onRemove={handleRemovePerson} />
+                        </div>
                       </div>
                     </div>
+                    <button 
+                      className="absolute left-0 top-1/2 -translate-y-1/2 bg-background/80 p-2 rounded-full shadow-lg"
+                      onClick={() => {
+                        const element = document.getElementById('advancedSearch');
+                        if (element) element.scrollLeft -= 300;
+                      }}
+                    >
+                      <ArrowLeft className="w-6 h-6" />
+                    </button>
+                    <button 
+                      className="absolute right-0 top-1/2 -translate-y-1/2 bg-background/80 p-2 rounded-full shadow-lg"
+                      onClick={() => {
+                        const element = document.getElementById('advancedSearch');
+                        if (element) element.scrollLeft += 300;
+                      }}
+                    >
+                      <ArrowRight className="w-6 h-6" />
+                    </button>
                   </div>
                 </div>
               </AccordionContent>
