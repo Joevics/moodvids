@@ -2,28 +2,45 @@
 import { Card } from "@/components/ui/card";
 import { Movie } from "@/types/movie";
 import { Eye, EyeOff } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useWatchHistory } from "@/hooks/useWatchHistory";
 
 interface MovieCardProps {
   movie: Movie;
-  onWatch?: (movie: Movie) => void;
 }
 
-export const MovieCard = ({ movie, onWatch }: MovieCardProps) => {
-  const [isWatched, setIsWatched] = useState(false);
+export const MovieCard = ({ movie }: MovieCardProps) => {
   const { toast } = useToast();
   const [imageLoaded, setImageLoaded] = useState(false);
+  const { toggleWatch, isMovieWatched } = useWatchHistory();
+  const [isWatched, setIsWatched] = useState(false);
 
-  const handleWatch = () => {
-    setIsWatched(!isWatched);
-    onWatch?.(movie);
-    toast({
-      title: isWatched ? "Removed from watched" : "Added to watched",
-      description: movie.title,
-    });
+  useEffect(() => {
+    setIsWatched(isMovieWatched(movie.id));
+  }, [movie.id, isMovieWatched]);
+
+  const handleWatch = async () => {
+    const newWatchedState = !isWatched;
+    setIsWatched(newWatchedState);
+    
+    try {
+      await toggleWatch.mutateAsync({ movie, isWatched: newWatchedState });
+      toast({
+        title: newWatchedState ? "Added to watched" : "Removed from watched",
+        description: movie.title,
+      });
+    } catch (error) {
+      console.error('Error updating watch status:', error);
+      setIsWatched(!newWatchedState); // Revert on error
+      toast({
+        title: "Error",
+        description: "Failed to update watch status",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -56,6 +73,7 @@ export const MovieCard = ({ movie, onWatch }: MovieCardProps) => {
                 size="icon"
                 className="text-white hover:text-primary"
                 onClick={handleWatch}
+                disabled={toggleWatch.isPending}
               >
                 {isWatched ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </Button>

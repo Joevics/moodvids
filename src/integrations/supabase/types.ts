@@ -9,7 +9,59 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      anonymous_users: {
+        Row: {
+          created_at: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      watch_history: {
+        Row: {
+          id: string
+          is_watched: boolean | null
+          movie_id: number
+          movie_title: string
+          poster_path: string | null
+          user_id: string
+          watched_at: string
+        }
+        Insert: {
+          id?: string
+          is_watched?: boolean | null
+          movie_id: number
+          movie_title: string
+          poster_path?: string | null
+          user_id: string
+          watched_at?: string
+        }
+        Update: {
+          id?: string
+          is_watched?: boolean | null
+          movie_id?: number
+          movie_title?: string
+          poster_path?: string | null
+          user_id?: string
+          watched_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "watch_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "anonymous_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
