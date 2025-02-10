@@ -71,6 +71,8 @@ serve(async (req) => {
     const { preferences } = await req.json();
     const { mood, genres, contentType, timePeriod, languages, streamingServices, selectedPeople } = preferences;
 
+    console.log('Received preferences:', preferences);
+
     let prompt = "Suggest 50 movies based on the following preferences:\n";
     if (mood) prompt += `- Mood: ${mood}\n`;
     if (genres?.length) prompt += `- Genres: ${genres.join(', ')}\n`;
@@ -93,7 +95,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4o-mini',
         messages: [
           { 
             role: 'system', 
@@ -104,12 +106,24 @@ serve(async (req) => {
       }),
     });
 
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('OpenAI API error:', errorData);
+      throw new Error(`OpenAI API error: ${response.status} ${errorData}`);
+    }
+
     const data = await response.json();
     console.log('OpenAI response:', data);
+
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      console.error('Unexpected OpenAI response structure:', data);
+      throw new Error('Invalid response from OpenAI API');
+    }
 
     const recommendationsText = data.choices[0].message.content;
     
     try {
+      // First try parsing the entire response as JSON
       const recommendations = JSON.parse(recommendationsText);
       return new Response(JSON.stringify({ recommendations }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
