@@ -25,9 +25,7 @@ type Genre =
   | "documentary";
 
 type ContentType = "movie" | "tv" | "anime" | "documentary";
-
 type TimePeriod = "classic" | "90s" | "2000s" | "latest";
-
 type Language = 
   | "english"
   | "spanish"
@@ -35,7 +33,6 @@ type Language =
   | "korean"
   | "japanese"
   | "chinese";
-
 type StreamingService = 
   | "netflix"
   | "disney"
@@ -43,6 +40,16 @@ type StreamingService =
   | "hulu"
   | "hbo"
   | "apple";
+
+interface MoviePreferences {
+  mood?: Mood;
+  genres?: Genre[];
+  contentType?: ContentType;
+  timePeriod?: TimePeriod;
+  languages?: Language[];
+  streamingServices?: StreamingService[];
+  selectedPeople?: string[];
+}
 
 interface Movie {
   id: number;
@@ -56,6 +63,7 @@ interface Movie {
 }
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const tmdbApiKey = Deno.env.get('TMDB_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -69,26 +77,23 @@ serve(async (req) => {
 
   try {
     const { preferences } = await req.json();
-    const { mood, genres, contentType, timePeriod, languages, streamingServices, selectedPeople } = preferences;
-
     console.log('Received preferences:', preferences);
 
-    let prompt = "Suggest 50 movies based on the following preferences:\n";
-    if (mood) prompt += `- Mood: ${mood}\n`;
-    if (genres?.length) prompt += `- Genres: ${genres.join(', ')}\n`;
-    if (contentType) prompt += `- Content Type: ${contentType}\n`;
-    if (timePeriod) prompt += `- Time Period: ${timePeriod}\n`;
-    if (languages?.length) prompt += `- Languages: ${languages.join(', ')}\n`;
-    if (streamingServices?.length) prompt += `- Streaming Services: ${streamingServices.join(', ')}\n`;
-    if (selectedPeople?.length) prompt += `- Cast/Crew: ${selectedPeople.join(', ')}\n`;
+    // 1. Get movie suggestions from OpenAI
+    let prompt = "Suggest 10 diverse movies based on the following preferences:\n";
+    if (preferences.mood) prompt += `- Mood: ${preferences.mood}\n`;
+    if (preferences.genres?.length) prompt += `- Genres: ${preferences.genres.join(', ')}\n`;
+    if (preferences.contentType) prompt += `- Content Type: ${preferences.contentType}\n`;
+    if (preferences.timePeriod) prompt += `- Time Period: ${preferences.timePeriod}\n`;
+    if (preferences.languages?.length) prompt += `- Languages: ${preferences.languages.join(', ')}\n`;
+    if (preferences.streamingServices?.length) prompt += `- Streaming Services: ${preferences.streamingServices.join(', ')}\n`;
+    if (preferences.selectedPeople?.length) prompt += `- Cast/Crew: ${preferences.selectedPeople.join(', ')}\n`;
     
-    prompt += "\nProvide the response in the following JSON format for each movie:\n";
-    prompt += '{"title": "Movie Title", "overview": "Brief description", "genres": ["Genre1", "Genre2"], "release_date": "YYYY-MM-DD"}';
-    prompt += "\nEnsure diversity in genres, release years, and languages. Avoid overly mainstream movies unless specifically requested.";
+    prompt += "\nProvide only movie titles, one per line. Do not include any additional information.";
 
     console.log('Sending prompt to OpenAI:', prompt);
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
@@ -99,49 +104,87 @@ serve(async (req) => {
         messages: [
           { 
             role: 'system', 
-            content: 'You are a knowledgeable film curator that provides diverse movie recommendations in JSON format.'
+            content: 'You are a knowledgeable film curator. Provide exactly 10 movie titles that match the given preferences. Return only the titles, one per line.'
           },
           { role: 'user', content: prompt }
         ],
       }),
     });
 
-    if (!response.ok) {
-      const errorData = await response.text();
+    if (!openaiResponse.ok) {
+      const errorData = await openaiResponse.text();
       console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${response.status} ${errorData}`);
+      throw new Error(`OpenAI API error: ${openaiResponse.status} ${errorData}`);
     }
 
-    const data = await response.json();
-    console.log('OpenAI response:', data);
+    const openaiData = await openaiResponse.json();
+    console.log('OpenAI response:', openaiData);
 
-    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-      console.error('Unexpected OpenAI response structure:', data);
-      throw new Error('Invalid response from OpenAI API');
-    }
+    const movieTitles = openaiData.choices[0].message.content
+      .split('\n')
+      .filter(title => title.trim())
+      .slice(0, 10);
 
-    const recommendationsText = data.choices[0].message.content;
+    console.log('Extracted movie titles:', movieTitles);
+
+    // 2. Get detailed movie information from TMDb
+    const movies: Movie[] = [];
     
-    try {
-      // First try parsing the entire response as JSON
-      const recommendations = JSON.parse(recommendationsText);
-      return new Response(JSON.stringify({ recommendations }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    } catch (e) {
-      console.error('Error parsing recommendations:', e);
-      // If the response isn't valid JSON, try to extract array of movies from the text
-      const moviesMatch = recommendationsText.match(/\[[\s\S]*\]/);
-      if (moviesMatch) {
-        const recommendations = JSON.parse(moviesMatch[0]);
-        return new Response(JSON.stringify({ recommendations }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    for (const title of movieTitles) {
+      try {
+        // Search for movie in TMDb
+        const searchResponse = await fetch(
+          `https://api.themoviedb.org/3/search/movie?api_key=${tmdbApiKey}&query=${encodeURIComponent(title)}&language=en-US&page=1`,
+        );
+
+        if (!searchResponse.ok) {
+          console.error(`TMDb search error for "${title}":`, await searchResponse.text());
+          continue;
+        }
+
+        const searchData = await searchResponse.json();
+        if (!searchData.results?.length) {
+          console.log(`No TMDb results found for "${title}"`);
+          continue;
+        }
+
+        // Get first result's details
+        const movieId = searchData.results[0].id;
+        const detailsResponse = await fetch(
+          `https://api.themoviedb.org/3/movie/${movieId}?api_key=${tmdbApiKey}&language=en-US`,
+        );
+
+        if (!detailsResponse.ok) {
+          console.error(`TMDb details error for movie ID ${movieId}:`, await detailsResponse.text());
+          continue;
+        }
+
+        const movieDetails = await detailsResponse.json();
+        
+        movies.push({
+          id: movieDetails.id,
+          title: movieDetails.title,
+          overview: movieDetails.overview,
+          poster_path: movieDetails.poster_path,
+          release_date: movieDetails.release_date,
+          vote_average: movieDetails.vote_average,
+          genres: movieDetails.genres.map((g: { name: string }) => g.name),
+          providers: [] // We'll implement streaming providers in the next iteration
         });
+
+      } catch (error) {
+        console.error(`Error fetching details for "${title}":`, error);
       }
-      throw new Error('Failed to parse recommendations');
     }
+
+    console.log(`Successfully fetched details for ${movies.length} movies`);
+
+    return new Response(JSON.stringify({ recommendations: movies }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error in get-movie-recommendations:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
