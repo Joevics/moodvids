@@ -1,69 +1,14 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { supabase } from "./supabaseClient.ts";
-
-// Define types directly in the edge function
-type Mood =
-  | "happy"
-  | "sad"
-  | "excited"
-  | "romantic"
-  | "nostalgic"
-  | "adventurous"
-  | "relaxed"
-  | "inspired";
-
-type Genre =
-  | "action"
-  | "comedy"
-  | "drama"
-  | "horror"
-  | "sci-fi"
-  | "fantasy"
-  | "romance"
-  | "thriller"
-  | "documentary";
-
-type ContentType = "movie" | "tv" | "anime" | "documentary";
-type TimePeriod = "classic" | "90s" | "2000s" | "latest";
-type Language = 
-  | "english"
-  | "spanish"
-  | "french"
-  | "korean"
-  | "japanese"
-  | "chinese";
-type StreamingService = 
-  | "netflix"
-  | "disney"
-  | "prime"
-  | "hulu"
-  | "hbo"
-  | "apple";
-
-interface MoviePreferences {
-  mood?: Mood;
-  genres?: Genre[];
-  contentType?: ContentType;
-  timePeriod?: TimePeriod;
-  languages?: Language[];
-  streamingServices?: StreamingService[];
-  selectedPeople?: string[];
-}
-
-interface Movie {
-  id: number;
-  title: string;
-  overview: string;
-  poster_path: string;
-  release_date: string;
-  vote_average: number;
-  genres: string[];
-  providers?: string[];
-}
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.0';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 const tmdbApiKey = Deno.env.get('TMDB_API_KEY');
+const supabaseUrl = Deno.env.get('SUPABASE_URL');
+const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+const supabase = createClient(supabaseUrl!, supabaseServiceRoleKey!);
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -112,11 +57,11 @@ serve(async (req) => {
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4',
+        model: 'gpt-4o-mini',
         messages: [
           { 
             role: 'system', 
@@ -144,13 +89,13 @@ serve(async (req) => {
     console.log('Extracted movie titles:', movieTitles);
 
     // 3. Get movie details from TMDb and filter out watched/recommended
-    const movies: Movie[] = [];
+    const movies = [];
     
     for (const title of movieTitles) {
       try {
         // Search for movie in TMDb
         const searchResponse = await fetch(
-          `https://api.themoviedb.org/3/search/movie?api_key=${Deno.env.get('TMDB_API_KEY')}&query=${encodeURIComponent(title)}&language=en-US&page=1`,
+          `https://api.themoviedb.org/3/search/movie?api_key=${tmdbApiKey}&query=${encodeURIComponent(title)}&language=en-US&page=1`,
         );
 
         if (!searchResponse.ok) {
@@ -174,7 +119,7 @@ serve(async (req) => {
 
         // Get movie details
         const detailsResponse = await fetch(
-          `https://api.themoviedb.org/3/movie/${movieId}?api_key=${Deno.env.get('TMDB_API_KEY')}&language=en-US`,
+          `https://api.themoviedb.org/3/movie/${movieId}?api_key=${tmdbApiKey}&language=en-US`,
         );
 
         if (!detailsResponse.ok) {
