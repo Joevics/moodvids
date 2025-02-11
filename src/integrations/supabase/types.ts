@@ -24,6 +24,33 @@ export type Database = {
         }
         Relationships: []
       }
+      recommendations: {
+        Row: {
+          id: string
+          movie_id: number
+          movie_title: string
+          poster_path: string | null
+          recommended_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          movie_id: number
+          movie_title: string
+          poster_path?: string | null
+          recommended_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          movie_id?: number
+          movie_title?: string
+          poster_path?: string | null
+          recommended_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       watch_history: {
         Row: {
           id: string
@@ -61,6 +88,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      watchlist: {
+        Row: {
+          added_at: string
+          id: string
+          movie_id: number
+          movie_title: string
+          poster_path: string | null
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          id?: string
+          movie_id: number
+          movie_title: string
+          poster_path?: string | null
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          id?: string
+          movie_id?: number
+          movie_title?: string
+          poster_path?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {

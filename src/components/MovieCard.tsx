@@ -1,12 +1,13 @@
 
 import { Card } from "@/components/ui/card";
 import { Movie } from "@/types/movie";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Bookmark, BookmarkX } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useWatchHistory } from "@/hooks/useWatchHistory";
+import { useWatchlist } from "@/hooks/useWatchlist";
 
 interface MovieCardProps {
   movie: Movie;
@@ -16,11 +17,14 @@ export const MovieCard = ({ movie }: MovieCardProps) => {
   const { toast } = useToast();
   const [imageLoaded, setImageLoaded] = useState(false);
   const { toggleWatch, isMovieWatched } = useWatchHistory();
+  const { toggleWatchlist, isInWatchlist } = useWatchlist();
   const [isWatched, setIsWatched] = useState(false);
+  const [inWatchlist, setInWatchlist] = useState(false);
 
   useEffect(() => {
     setIsWatched(isMovieWatched(movie.id));
-  }, [movie.id, isMovieWatched]);
+    setInWatchlist(isInWatchlist(movie.id));
+  }, [movie.id, isMovieWatched, isInWatchlist]);
 
   const handleWatch = async () => {
     const newWatchedState = !isWatched;
@@ -38,6 +42,27 @@ export const MovieCard = ({ movie }: MovieCardProps) => {
       toast({
         title: "Error",
         description: "Failed to update watch status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleWatchlist = async () => {
+    const newWatchlistState = !inWatchlist;
+    setInWatchlist(newWatchlistState);
+    
+    try {
+      await toggleWatchlist.mutateAsync({ movie, isInWatchlist: !newWatchlistState });
+      toast({
+        title: newWatchlistState ? "Added to watchlist" : "Removed from watchlist",
+        description: movie.title,
+      });
+    } catch (error) {
+      console.error('Error updating watchlist status:', error);
+      setInWatchlist(!newWatchlistState); // Revert on error
+      toast({
+        title: "Error",
+        description: "Failed to update watchlist",
         variant: "destructive",
       });
     }
@@ -68,15 +93,26 @@ export const MovieCard = ({ movie }: MovieCardProps) => {
               <span className="text-white/90 text-sm">
                 {new Date(movie.release_date).getFullYear()}
               </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-white hover:text-primary"
-                onClick={handleWatch}
-                disabled={toggleWatch.isPending}
-              >
-                {isWatched ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-white hover:text-primary"
+                  onClick={handleWatch}
+                  disabled={toggleWatch.isPending}
+                >
+                  {isWatched ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-white hover:text-primary"
+                  onClick={handleWatchlist}
+                  disabled={toggleWatchlist.isPending}
+                >
+                  {inWatchlist ? <BookmarkX className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
