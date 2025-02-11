@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { MoodSelector } from "@/components/MoodSelector";
 import { GenreSelector } from "@/components/GenreSelector";
@@ -11,37 +12,13 @@ import { Movie, Mood, Genre, ContentType, TimePeriod, Language, StreamingService
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
+import { useRecommendations } from "@/hooks/useRecommendations";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-
-// Temporary mock data until we integrate with OpenAI and TMDb
-const mockMovies: Movie[] = [
-  {
-    id: 1,
-    title: "Inception",
-    overview: "A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O.",
-    poster_path: "/8IB2e4r4oVhHnANbnm7O3Tj6tF8.jpg",
-    release_date: "2010-07-16",
-    vote_average: 8.4,
-    genres: ["Action", "Sci-Fi"],
-    providers: ["Netflix", "Amazon Prime"]
-  },
-  {
-    id: 2,
-    title: "The Shawshank Redemption",
-    overview: "Two imprisoned men bond over a number of years, finding solace and eventual redemption through acts of common decency.",
-    poster_path: "/9O7gLzmreU0nGkIB6K3BsJbzvNv.jpg",
-    release_date: "1994-09-23",
-    vote_average: 8.7,
-    genres: ["Drama"],
-    providers: ["Netflix"]
-  },
-  // Add more mock movies...
-];
 
 const Index = () => {
   const [selectedMood, setSelectedMood] = useState<Mood>();
@@ -53,6 +30,16 @@ const Index = () => {
   const [selectedPeople, setSelectedPeople] = useState<string[]>([]);
   const [showRecommendations, setShowRecommendations] = useState(false);
   const { toast } = useToast();
+
+  const recommendations = useRecommendations({
+    mood: selectedMood,
+    genres: selectedGenre ? [selectedGenre] : undefined,
+    contentType: selectedContentType,
+    timePeriod: selectedTimePeriod,
+    languages: selectedLanguage ? [selectedLanguage] : undefined,
+    streamingServices: selectedService ? [selectedService] : undefined,
+    selectedPeople,
+  });
 
   const handleMoodSelect = (mood: Mood) => {
     setSelectedMood(mood);
@@ -90,6 +77,7 @@ const Index = () => {
 
   const handleGetRecommendations = () => {
     setShowRecommendations(true);
+    recommendations.refetch();
     toast({
       title: "Generating recommendations",
       description: "Finding the perfect content based on your preferences...",
@@ -177,6 +165,7 @@ const Index = () => {
               size="lg"
               onClick={handleGetRecommendations}
               className="bg-primary hover:bg-primary/90 text-white px-8"
+              disabled={recommendations.isPending}
             >
               Get Recommendations
             </Button>
@@ -187,11 +176,19 @@ const Index = () => {
               <h2 className="text-2xl font-semibold text-center">
                 Here's what we recommend
               </h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                {mockMovies.map((movie) => (
-                  <MovieCard key={movie.id} movie={movie} />
-                ))}
-              </div>
+              {recommendations.isPending ? (
+                <div className="text-center">Loading recommendations...</div>
+              ) : recommendations.error ? (
+                <div className="text-center text-red-500">
+                  Error loading recommendations. Please try again.
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  {recommendations.data?.map((movie) => (
+                    <MovieCard key={movie.id} movie={movie} />
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </section>
