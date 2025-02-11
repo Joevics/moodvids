@@ -11,7 +11,7 @@ import { MovieCard } from "@/components/MovieCard";
 import { Movie, Mood, Genre, ContentType, TimePeriod, Language, StreamingService } from "@/types/movie";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import { useRecommendations } from "@/hooks/useRecommendations";
 import {
   Accordion,
@@ -76,6 +76,15 @@ const Index = () => {
   };
 
   const handleGetRecommendations = () => {
+    if (!selectedMood) {
+      toast({
+        title: "Please select a mood",
+        description: "We need to know how you're feeling to give you the best recommendations.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setShowRecommendations(true);
     recommendations.refetch();
     toast({
@@ -167,7 +176,14 @@ const Index = () => {
               className="bg-primary hover:bg-primary/90 text-white px-8"
               disabled={recommendations.isPending}
             >
-              Get Recommendations
+              {recommendations.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Getting Recommendations...
+                </>
+              ) : (
+                "Get Recommendations"
+              )}
             </Button>
           </div>
 
@@ -177,14 +193,20 @@ const Index = () => {
                 Here's what we recommend
               </h2>
               {recommendations.isPending ? (
-                <div className="text-center">Loading recommendations...</div>
+                <div className="flex items-center justify-center h-64">
+                  <Loader2 className="w-8 h-8 animate-spin" />
+                </div>
               ) : recommendations.error ? (
                 <div className="text-center text-red-500">
                   Error loading recommendations. Please try again.
                 </div>
+              ) : !recommendations.data?.length ? (
+                <div className="text-center text-muted-foreground">
+                  No recommendations found. Try adjusting your preferences.
+                </div>
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                  {recommendations.data?.map((movie) => (
+                  {recommendations.data.map((movie) => (
                     <MovieCard key={movie.id} movie={movie} />
                   ))}
                 </div>
