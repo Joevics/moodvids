@@ -24,6 +24,22 @@ export const useRecommendations = (preferences: MoviePreferences) => {
       });
 
       if (error) throw error;
+
+      // Add providers to the recommendations table
+      if (data.recommendations?.length) {
+        const recommendationsToInsert = data.recommendations.map((movie: Movie) => ({
+          user_id: userId,
+          movie_id: movie.id,
+          movie_title: movie.title,
+          poster_path: movie.poster_path,
+          providers: movie.providers || [],
+        }));
+
+        await supabase
+          .from('recommendations')
+          .upsert(recommendationsToInsert, { onConflict: 'movie_id,user_id' });
+      }
+
       return data.recommendations as Movie[];
     },
     enabled: false, // Only fetch when explicitly triggered

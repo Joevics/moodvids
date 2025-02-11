@@ -30,6 +30,7 @@ export type Database = {
           movie_id: number
           movie_title: string
           poster_path: string | null
+          providers: Json | null
           recommended_at: string
           user_id: string
         }
@@ -38,6 +39,7 @@ export type Database = {
           movie_id: number
           movie_title: string
           poster_path?: string | null
+          providers?: Json | null
           recommended_at?: string
           user_id: string
         }
@@ -46,6 +48,7 @@ export type Database = {
           movie_id?: number
           movie_title?: string
           poster_path?: string | null
+          providers?: Json | null
           recommended_at?: string
           user_id?: string
         }
@@ -58,6 +61,7 @@ export type Database = {
           movie_id: number
           movie_title: string
           poster_path: string | null
+          providers: Json | null
           user_id: string
           watched_at: string
         }
@@ -67,6 +71,7 @@ export type Database = {
           movie_id: number
           movie_title: string
           poster_path?: string | null
+          providers?: Json | null
           user_id: string
           watched_at?: string
         }
@@ -76,6 +81,7 @@ export type Database = {
           movie_id?: number
           movie_title?: string
           poster_path?: string | null
+          providers?: Json | null
           user_id?: string
           watched_at?: string
         }
@@ -96,6 +102,7 @@ export type Database = {
           movie_id: number
           movie_title: string
           poster_path: string | null
+          providers: Json | null
           user_id: string
         }
         Insert: {
@@ -104,6 +111,7 @@ export type Database = {
           movie_id: number
           movie_title: string
           poster_path?: string | null
+          providers?: Json | null
           user_id: string
         }
         Update: {
@@ -112,6 +120,7 @@ export type Database = {
           movie_id?: number
           movie_title?: string
           poster_path?: string | null
+          providers?: Json | null
           user_id?: string
         }
         Relationships: []

@@ -1,13 +1,19 @@
 
 import { Card } from "@/components/ui/card";
 import { Movie } from "@/types/movie";
-import { Eye, EyeOff, Bookmark, BookmarkX } from "lucide-react";
+import { Eye, EyeOff, Bookmark, BookmarkX, PlayCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useWatchHistory } from "@/hooks/useWatchHistory";
 import { useWatchlist } from "@/hooks/useWatchlist";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface MovieCardProps {
   movie: Movie;
@@ -89,29 +95,49 @@ export const MovieCard = ({ movie }: MovieCardProps) => {
               <h3 className="text-white font-semibold mb-2">{movie.title}</h3>
               <p className="text-white/80 text-sm line-clamp-3">{movie.overview}</p>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-white/90 text-sm">
-                {new Date(movie.release_date).getFullYear()}
-              </span>
-              <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-white hover:text-primary"
-                  onClick={handleWatch}
-                  disabled={toggleWatch.isPending}
-                >
-                  {isWatched ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-white hover:text-primary"
-                  onClick={handleWatchlist}
-                  disabled={toggleWatchlist.isPending}
-                >
-                  {inWatchlist ? <BookmarkX className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
-                </Button>
+            <div className="space-y-4">
+              {movie.providers && movie.providers.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {movie.providers.map((provider, index) => (
+                    <TooltipProvider key={index}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="bg-white/20 p-1 rounded-full">
+                            <PlayCircle className="w-4 h-4 text-white" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Available on {provider}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ))}
+                </div>
+              )}
+              <div className="flex justify-between items-center">
+                <span className="text-white/90 text-sm">
+                  {new Date(movie.release_date).getFullYear()}
+                </span>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-white hover:text-primary"
+                    onClick={handleWatch}
+                    disabled={toggleWatch.isPending}
+                  >
+                    {isWatched ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-white hover:text-primary"
+                    onClick={handleWatchlist}
+                    disabled={toggleWatchlist.isPending}
+                  >
+                    {inWatchlist ? <BookmarkX className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

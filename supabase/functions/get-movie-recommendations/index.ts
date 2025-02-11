@@ -40,7 +40,7 @@ serve(async (req) => {
     const watchedMovieIds = new Set(watchHistory?.map(h => h.movie_id) || []);
     const recommendedMovieIds = new Set(pastRecommendations?.map(r => r.movie_id) || []);
 
-    // 2. Get 50 movie suggestions from OpenAI
+    // 2. Get movie suggestions from OpenAI
     let prompt = "Suggest 50 diverse movies based on the following preferences:\n";
     if (preferences.mood) prompt += `- Mood: ${preferences.mood}\n`;
     if (preferences.genres?.length) prompt += `- Genres: ${preferences.genres.join(', ')}\n`;
@@ -61,7 +61,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4',
         messages: [
           { 
             role: 'system', 
@@ -119,7 +119,7 @@ serve(async (req) => {
 
         // Get movie details
         const detailsResponse = await fetch(
-          `https://api.themoviedb.org/3/movie/${movieId}?api_key=${tmdbApiKey}&language=en-US`,
+          `https://api.themoviedb.org/3/movie/${movieId}?api_key=${tmdbApiKey}&language=en-US&append_to_response=watch/providers`,
         );
 
         if (!detailsResponse.ok) {
@@ -129,21 +129,11 @@ serve(async (req) => {
 
         const movieDetails = await detailsResponse.json();
         
-        // Add to recommendations
-        const { error: recommendationError } = await supabase
-          .from('recommendations')
-          .insert({
-            user_id: userId,
-            movie_id: movieDetails.id,
-            movie_title: movieDetails.title,
-            poster_path: movieDetails.poster_path,
-          });
+        // Extract streaming providers
+        const providers = movieDetails['watch/providers']?.results?.US?.flatrate || [];
+        const providerNames = providers.map((p: { provider_name: string }) => p.provider_name);
 
-        if (recommendationError) {
-          console.error('Error inserting recommendation:', recommendationError);
-        }
-
-        movies.push({
+        const movie = {
           id: movieDetails.id,
           title: movieDetails.title,
           overview: movieDetails.overview,
@@ -151,8 +141,10 @@ serve(async (req) => {
           release_date: movieDetails.release_date,
           vote_average: movieDetails.vote_average,
           genres: movieDetails.genres.map((g: { name: string }) => g.name),
-          providers: [] // We'll implement streaming providers in the next iteration
-        });
+          providers: providerNames
+        };
+
+        movies.push(movie);
 
         // Break if we have enough movies
         if (movies.length >= 10) break;
@@ -162,16 +154,9 @@ serve(async (req) => {
       }
     }
 
-    // 4. If we don't have enough movies, get more from OpenAI
-    if (movies.length < 10) {
-      console.log('Not enough movies, getting more suggestions...');
-      prompt = prompt.replace('50', '25'); // Ask for fewer movies in the second round
-      // ... Repeat OpenAI call and TMDb fetching (implementation similar to above)
-    }
-
     console.log(`Successfully fetched details for ${movies.length} movies`);
 
-    return new Response(JSON.stringify({ recommendations: movies.slice(0, 10) }), {
+    return new Response(JSON.stringify({ recommendations: movies }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
