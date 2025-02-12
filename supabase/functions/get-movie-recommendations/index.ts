@@ -67,7 +67,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini', // Updated to use the correct model
+        model: 'gpt-4',
         messages: [
           { 
             role: 'system', 
@@ -75,6 +75,8 @@ serve(async (req) => {
           },
           { role: 'user', content: prompt }
         ],
+        temperature: 0.7,
+        max_tokens: 1000,
       }),
     });
 
