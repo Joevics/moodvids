@@ -5,12 +5,18 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { useEffect } from "react";
 
 const Recommendations = () => {
   const { toast } = useToast();
   const recommendations = useRecommendations({
     mood: "happy", // Default mood, we can make this configurable later
   });
+
+  // Auto-fetch recommendations when the component mounts
+  useEffect(() => {
+    recommendations.refetch();
+  }, []);
 
   const handleRefresh = () => {
     recommendations.refetch();
@@ -24,16 +30,22 @@ const Recommendations = () => {
     <div className="container py-4">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Recommended for You</h1>
-        <Button onClick={handleRefresh} disabled={recommendations.isPending}>
-          {recommendations.isPending ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+        <Button 
+          onClick={handleRefresh} 
+          disabled={recommendations.isFetching}
+        >
+          {recommendations.isFetching ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Loading...
+            </>
           ) : (
             "Refresh"
           )}
         </Button>
       </div>
       <ScrollArea className="h-[calc(100vh-12rem)]">
-        {recommendations.isPending ? (
+        {recommendations.isFetching && !recommendations.data ? (
           <div className="flex items-center justify-center h-64">
             <Loader2 className="w-8 h-8 animate-spin" />
           </div>
