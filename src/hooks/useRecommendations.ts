@@ -43,5 +43,7 @@ export const useRecommendations = (preferences: MoviePreferences) => {
       return data.recommendations as Movie[];
     },
     enabled: false, // Only fetch when explicitly triggered
+    staleTime: Infinity, // Prevents auto-refresh
+    gcTime: Infinity, // Keeps data cached indefinitely (replacing cacheTime)
   });
 };

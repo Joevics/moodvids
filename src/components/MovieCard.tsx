@@ -1,19 +1,13 @@
 
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Movie } from "@/types/movie";
-import { Eye, EyeOff, Bookmark, BookmarkX, PlayCircle } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Eye, Plus, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useWatchHistory } from "@/hooks/useWatchHistory";
 import { useWatchlist } from "@/hooks/useWatchlist";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 interface MovieCardProps {
   movie: Movie;
@@ -43,7 +37,6 @@ export const MovieCard = ({ movie }: MovieCardProps) => {
         description: movie.title,
       });
     } catch (error) {
-      console.error('Error updating watch status:', error);
       setIsWatched(!newWatchedState); // Revert on error
       toast({
         title: "Error",
@@ -64,7 +57,6 @@ export const MovieCard = ({ movie }: MovieCardProps) => {
         description: movie.title,
       });
     } catch (error) {
-      console.error('Error updating watchlist status:', error);
       setInWatchlist(!newWatchlistState); // Revert on error
       toast({
         title: "Error",
@@ -95,49 +87,47 @@ export const MovieCard = ({ movie }: MovieCardProps) => {
               <h3 className="text-white font-semibold mb-2">{movie.title}</h3>
               <p className="text-white/80 text-sm line-clamp-3">{movie.overview}</p>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-2">
               {movie.providers && movie.providers.length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                  {movie.providers.map((provider, index) => (
-                    <TooltipProvider key={index}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="bg-white/20 p-1 rounded-full">
-                            <PlayCircle className="w-4 h-4 text-white" />
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Available on {provider}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  ))}
+                  <p className="text-white text-sm">
+                    Available on: {movie.providers.join(', ')}
+                  </p>
                 </div>
               )}
               <div className="flex justify-between items-center">
-                <span className="text-white/90 text-sm">
-                  {new Date(movie.release_date).getFullYear()}
-                </span>
-                <div className="flex gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-white hover:text-primary"
-                    onClick={handleWatch}
-                    disabled={toggleWatch.isPending}
-                  >
-                    {isWatched ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-white hover:text-primary"
-                    onClick={handleWatchlist}
-                    disabled={toggleWatchlist.isPending}
-                  >
-                    {inWatchlist ? <BookmarkX className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
-                  </Button>
-                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-white hover:text-primary"
+                  onClick={handleWatch}
+                  disabled={toggleWatch.isPending}
+                >
+                  {toggleWatch.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Eye className="w-4 h-4 mr-1" />
+                      {isWatched ? "Seen" : "Mark as Seen"}
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-white hover:text-primary"
+                  onClick={handleWatchlist}
+                  disabled={toggleWatchlist.isPending}
+                >
+                  {toggleWatchlist.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4 mr-1" />
+                      {inWatchlist ? "In Watchlist" : "+ Watchlist"}
+                    </>
+                  )}
+                </Button>
               </div>
             </div>
           </div>
