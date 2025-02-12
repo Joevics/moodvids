@@ -155,7 +155,7 @@ serve(async (req) => {
         movies.push(movie);
 
         // Break if we have enough movies
-        if (movies.length >= 10) break;
+        if (movies.length >= 5) break; // Changed from 10 to 5
 
       } catch (error) {
         console.error(`Error fetching details for "${title}":`, error);
