@@ -16,6 +16,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -24,6 +25,11 @@ serve(async (req) => {
     const { preferences, userId } = await req.json();
     console.log('Received preferences:', preferences);
     console.log('User ID:', userId);
+
+    // Check if required environment variables are set
+    if (!openAIApiKey || !tmdbApiKey) {
+      throw new Error('Required API keys are not set');
+    }
 
     // 1. Get user's watch history and past recommendations
     const { data: watchHistory } = await supabase
@@ -61,7 +67,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4',
+        model: 'gpt-4o-mini', // Updated to use the correct model
         messages: [
           { 
             role: 'system', 
