@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.0';
@@ -38,16 +39,6 @@ serve(async (req) => {
     if (!openAIApiKey || !tmdbApiKey) {
       throw new Error('Required API keys are not set');
     }
-
-    // Set auth context for this request
-    const { data: { user }, error: authError } = await supabase.auth.admin.getUserById(userId);
-    if (authError) throw authError;
-
-    // Explicitly set auth context for all subsequent Supabase calls
-    supabase.auth.setSession({
-      access_token: user?.role ?? 'authenticated',
-      refresh_token: ''
-    });
 
     // 1. Get user's watch history and past recommendations
     const { data: watchHistory } = await supabase
@@ -182,7 +173,7 @@ serve(async (req) => {
 
     console.log(`Successfully fetched details for ${movies.length} movies`);
 
-    // Add providers to the recommendations table with explicit auth context
+    // Add recommendations to the database
     if (movies.length) {
       const recommendationsToInsert = movies.map((movie) => ({
         user_id: userId,
@@ -195,8 +186,7 @@ serve(async (req) => {
       const { error: insertError } = await supabase
         .from('recommendations')
         .upsert(recommendationsToInsert, { 
-          onConflict: 'movie_id,user_id',
-          ignoreDuplicates: false 
+          onConflict: 'movie_id,user_id'
         });
 
       if (insertError) {
