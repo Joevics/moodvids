@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Movie } from "@/types/movie";
-import { Eye, Plus, Loader2 } from "lucide-react";
+import { Eye, Plus, Loader2, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -11,9 +11,12 @@ import { useWatchlist } from "@/hooks/useWatchlist";
 
 interface MovieCardProps {
   movie: Movie;
+  onWatchToggle?: () => void;
+  onWatchlistToggle?: () => void;
+  onDelete?: () => void;
 }
 
-export const MovieCard = ({ movie }: MovieCardProps) => {
+export const MovieCard = ({ movie, onWatchToggle, onWatchlistToggle, onDelete }: MovieCardProps) => {
   const { toast } = useToast();
   const [imageLoaded, setImageLoaded] = useState(false);
   const { toggleWatch, isMovieWatched } = useWatchHistory();
@@ -36,6 +39,9 @@ export const MovieCard = ({ movie }: MovieCardProps) => {
         title: newWatchedState ? "Added to watched" : "Removed from watched",
         description: movie.title,
       });
+      if (newWatchedState && onWatchToggle) {
+        onWatchToggle();
+      }
     } catch (error) {
       setIsWatched(!newWatchedState); // Revert on error
       toast({
@@ -56,12 +62,25 @@ export const MovieCard = ({ movie }: MovieCardProps) => {
         title: newWatchlistState ? "Added to watchlist" : "Removed from watchlist",
         description: movie.title,
       });
+      if (newWatchlistState && onWatchlistToggle) {
+        onWatchlistToggle();
+      }
     } catch (error) {
       setInWatchlist(!newWatchlistState); // Revert on error
       toast({
         title: "Error",
         description: "Failed to update watchlist",
         variant: "destructive",
+      });
+    }
+  };
+
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete();
+      toast({
+        title: "Removed from recommendations",
+        description: movie.title,
       });
     }
   };
@@ -128,6 +147,16 @@ export const MovieCard = ({ movie }: MovieCardProps) => {
                     </>
                   )}
                 </Button>
+                {onDelete && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-white hover:text-destructive"
+                    onClick={handleDelete}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
             </div>
           </div>

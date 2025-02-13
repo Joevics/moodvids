@@ -3,11 +3,27 @@ import { useRecommendations } from "@/hooks/useRecommendations";
 import { MovieCard } from "@/components/MovieCard";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2 } from "lucide-react";
+import { useEffect } from "react";
+import { useWatchHistory } from "@/hooks/useWatchHistory";
+import { useWatchlist } from "@/hooks/useWatchlist";
 
 const Recommendations = () => {
-  const recommendations = useRecommendations({
-    mood: "happy", // Default mood
-  });
+  const { data: recommendations = [], isFetching, refetch, removeRecommendation } = useRecommendations();
+  const { toggleWatch, isMovieWatched } = useWatchHistory();
+  const { toggleWatchlist, isInWatchlist } = useWatchlist();
+
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
+
+  // Remove recommendation when movie is watched or added to watchlist
+  const handleWatchToggle = async (movieId: number) => {
+    await removeRecommendation.mutateAsync(movieId);
+  };
+
+  const handleWatchlistToggle = async (movieId: number) => {
+    await removeRecommendation.mutateAsync(movieId);
+  };
 
   return (
     <div className="container py-4">
@@ -15,22 +31,24 @@ const Recommendations = () => {
         <h1 className="text-2xl font-bold">Recommended for You</h1>
       </div>
       <ScrollArea className="h-[calc(100vh-12rem)]">
-        {recommendations.isFetching && !recommendations.data ? (
+        {isFetching && !recommendations.length ? (
           <div className="flex items-center justify-center h-64">
             <Loader2 className="w-8 h-8 animate-spin" />
           </div>
-        ) : recommendations.error ? (
-          <div className="text-center text-red-500 py-8">
-            Error loading recommendations. Please try again.
-          </div>
-        ) : !recommendations.data?.length ? (
+        ) : !recommendations.length ? (
           <div className="text-center py-8 text-muted-foreground">
             No recommendations available. Try using the home page to get personalized recommendations.
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {recommendations.data.map((movie) => (
-              <MovieCard key={movie.id} movie={movie} />
+            {recommendations.map((movie) => (
+              <MovieCard 
+                key={movie.id} 
+                movie={movie} 
+                onWatchToggle={() => handleWatchToggle(movie.id)}
+                onWatchlistToggle={() => handleWatchlistToggle(movie.id)}
+                onDelete={() => removeRecommendation.mutate(movie.id)}
+              />
             ))}
           </div>
         )}

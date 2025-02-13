@@ -18,6 +18,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
   const [selectedMood, setSelectedMood] = useState<Mood>();
@@ -27,8 +28,8 @@ const Index = () => {
   const [selectedLanguage, setSelectedLanguage] = useState<Language>();
   const [selectedService, setSelectedService] = useState<StreamingService>();
   const [selectedPeople, setSelectedPeople] = useState<string[]>([]);
-  const [showRecommendations, setShowRecommendations] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const recommendations = useRecommendations({
     mood: selectedMood,
@@ -80,8 +81,9 @@ const Index = () => {
       return;
     }
     
-    setShowRecommendations(true);
-    recommendations.refetch().catch((error) => {
+    recommendations.refetch().then(() => {
+      navigate('/recommendations');
+    }).catch((error) => {
       console.error('Error fetching recommendations:', error);
       toast({
         title: "Error",
@@ -185,32 +187,6 @@ const Index = () => {
             </Button>
           </div>
 
-          {showRecommendations && (
-            <div className="space-y-4 animate-slideUp">
-              <h2 className="text-2xl font-semibold text-center">
-                Here's what we recommend
-              </h2>
-              {recommendations.isFetching ? (
-                <div className="flex items-center justify-center h-64">
-                  <Loader2 className="w-8 h-8 animate-spin" />
-                </div>
-              ) : recommendations.error ? (
-                <div className="text-center text-red-500">
-                  Error loading recommendations. Please try again.
-                </div>
-              ) : !recommendations.data?.length ? (
-                <div className="text-center text-muted-foreground">
-                  No recommendations found. Try adjusting your preferences.
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                  {recommendations.data.map((movie) => (
-                    <MovieCard key={movie.id} movie={movie} />
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
         </section>
       </main>
     </div>
