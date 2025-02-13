@@ -16,7 +16,6 @@ const Recommendations = () => {
     refetch();
   }, [refetch]);
 
-  // Remove recommendation when movie is watched or added to watchlist
   const handleWatchToggle = async (movieId: number) => {
     await removeRecommendation.mutateAsync(movieId);
   };
@@ -40,7 +39,7 @@ const Recommendations = () => {
             No recommendations available. Try using the home page to get personalized recommendations.
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div className="space-y-4">
             {recommendations.map((movie) => (
               <MovieCard 
                 key={movie.id} 
