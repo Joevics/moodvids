@@ -17,7 +17,10 @@ export const useWatchlist = () => {
         .eq('user_id', userId)
         .order('added_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching watchlist:', error);
+        return [];
+      }
       return data || [];
     }
   });
@@ -33,7 +36,10 @@ export const useWatchlist = () => {
           .eq('user_id', userId)
           .eq('movie_id', movie.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error removing from watchlist:', error);
+          throw error;
+        }
         return null;
       } else {
         const { data, error } = await supabase
@@ -43,11 +49,15 @@ export const useWatchlist = () => {
             movie_id: movie.id,
             movie_title: movie.title,
             poster_path: movie.poster_path,
+            providers: movie.providers || []
           })
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error adding to watchlist:', error);
+          throw error;
+        }
         return data;
       }
     },

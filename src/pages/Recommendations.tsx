@@ -20,8 +20,16 @@ const Recommendations = () => {
     await removeRecommendation.mutateAsync(movieId);
   };
 
-  const handleWatchlistToggle = async (movieId: number) => {
-    await removeRecommendation.mutateAsync(movieId);
+  const handleWatchlistToggle = async (movie: any) => {
+    try {
+      await toggleWatchlist.mutateAsync({
+        movie,
+        isInWatchlist: isInWatchlist(movie.id)
+      });
+      await removeRecommendation.mutateAsync(movie.id);
+    } catch (error) {
+      console.error('Error toggling watchlist:', error);
+    }
   };
 
   return (
@@ -45,7 +53,7 @@ const Recommendations = () => {
                 key={movie.id} 
                 movie={movie} 
                 onWatchToggle={() => handleWatchToggle(movie.id)}
-                onWatchlistToggle={() => handleWatchlistToggle(movie.id)}
+                onWatchlistToggle={() => handleWatchlistToggle(movie)}
                 onDelete={() => removeRecommendation.mutate(movie.id)}
               />
             ))}
