@@ -86,10 +86,13 @@ const Index = () => {
     }
     
     setShowRecommendations(true);
-    recommendations.refetch();
-    toast({
-      title: "Generating recommendations",
-      description: "Finding the perfect content based on your preferences...",
+    recommendations.refetch().catch((error) => {
+      console.error('Error fetching recommendations:', error);
+      toast({
+        title: "Error",
+        description: "Failed to get recommendations. Please try again.",
+        variant: "destructive",
+      });
     });
   };
 
@@ -106,7 +109,7 @@ const Index = () => {
         <section className="space-y-12">
           <div className="text-center space-y-4">
             <h2 className="text-2xl font-semibold">How are you feeling today?</h2>
-            <MoodSelector selectedMood={selectedMood} onSelect={handleMoodSelect} />
+            <MoodSelector selectedMood={selectedMood} onSelect={setSelectedMood} />
           </div>
 
           <Accordion type="single" collapsible className="w-full">
@@ -174,9 +177,9 @@ const Index = () => {
               size="lg"
               onClick={handleGetRecommendations}
               className="bg-primary hover:bg-primary/90 text-white px-8"
-              disabled={recommendations.isPending}
+              disabled={recommendations.isFetching}
             >
-              {recommendations.isPending ? (
+              {recommendations.isFetching ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Getting Recommendations...
@@ -192,7 +195,7 @@ const Index = () => {
               <h2 className="text-2xl font-semibold text-center">
                 Here's what we recommend
               </h2>
-              {recommendations.isPending ? (
+              {recommendations.isFetching ? (
                 <div className="flex items-center justify-center h-64">
                   <Loader2 className="w-8 h-8 animate-spin" />
                 </div>
