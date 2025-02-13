@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { MoodSelector } from "@/components/MoodSelector";
 import { GenreSelector } from "@/components/GenreSelector";
@@ -40,10 +39,6 @@ const Index = () => {
     streamingServices: selectedService ? [selectedService] : undefined,
     selectedPeople,
   });
-
-  const handleMoodSelect = (mood: Mood) => {
-    setSelectedMood(mood);
-  };
 
   const handleGenreSelect = (genre: Genre) => {
     setSelectedGenre(genre);
