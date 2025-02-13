@@ -65,7 +65,7 @@ serve(async (req) => {
     if (preferences.streamingServices?.length) prompt += `- Streaming Services: ${preferences.streamingServices.join(', ')}\n`;
     if (preferences.selectedPeople?.length) prompt += `- Cast/Crew: ${preferences.selectedPeople.join(', ')}\n`;
     
-    prompt += "\nProvide only movie titles, one per line. Do not include any additional information.";
+    prompt += "\nProvide only movie titles, one per line. Do not include any additional information or numbering.";
 
     console.log('Sending prompt to OpenAI:', prompt);
 
@@ -76,11 +76,11 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4',
+        model: 'gpt-4o',
         messages: [
           { 
             role: 'system', 
-            content: 'You are a knowledgeable film curator. Provide exactly 50 movie titles that match the given preferences. Return only the titles, one per line.'
+            content: 'You are a knowledgeable film curator. Provide exactly 50 movie titles that match the given preferences. Return only the titles, one per line, without any numbering or additional information.'
           },
           { role: 'user', content: prompt }
         ],
@@ -101,6 +101,7 @@ serve(async (req) => {
     let movieTitles = openaiData.choices[0].message.content
       .split('\n')
       .filter(title => title.trim())
+      .map(title => title.replace(/^\d+\.\s*/, '')) // Remove any numbering
       .slice(0, 50);
 
     console.log('Extracted movie titles:', movieTitles);
@@ -185,9 +186,7 @@ serve(async (req) => {
 
       const { error: insertError } = await supabase
         .from('recommendations')
-        .upsert(recommendationsToInsert, { 
-          onConflict: 'movie_id,user_id'
-        });
+        .upsert(recommendationsToInsert);
 
       if (insertError) {
         console.error('Error inserting recommendations:', insertError);
