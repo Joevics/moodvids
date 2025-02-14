@@ -72,8 +72,8 @@ export const MovieCard = ({ movie, onWatchToggle, onWatchlistToggle, onDelete }:
   return (
     <Card className="overflow-hidden transition-shadow hover:shadow-lg">
       <Link to={`/movie/${movie.id}`} className="block">
-        <div className="grid grid-cols-[1fr,2fr] gap-4">
-          <div className="relative aspect-[2/3]">
+        <div className="grid grid-cols-[120px,1fr] gap-4 h-[180px]">
+          <div className="relative h-full">
             {!imageLoaded && (
               <div className="absolute inset-0 bg-muted animate-pulse" />
             )}
@@ -88,16 +88,16 @@ export const MovieCard = ({ movie, onWatchToggle, onWatchlistToggle, onDelete }:
             />
           </div>
           
-          <div className="p-4 flex flex-col justify-between">
+          <div className="p-3 flex flex-col justify-between">
             <div>
-              <h3 className="text-2xl font-semibold mb-2">{movie.title}</h3>
+              <h3 className="text-lg font-semibold mb-1">{movie.title}</h3>
               
-              <div className="flex items-center mb-4">
-                <Star className="w-5 h-5 text-yellow-400 mr-1" />
-                <span className="text-lg">{movie.vote_average.toFixed(1)}</span>
+              <div className="flex items-center mb-2">
+                <Star className="w-4 h-4 text-yellow-400 mr-1" />
+                <span>{movie.vote_average.toFixed(1)}</span>
               </div>
               
-              <p className="text-muted-foreground line-clamp-3 mb-4">
+              <p className="text-sm text-muted-foreground line-clamp-3">
                 {movie.overview}
               </p>
             </div>
