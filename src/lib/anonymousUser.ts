@@ -7,8 +7,8 @@ export const getOrCreateAnonymousId = async (): Promise<string> => {
   // Try to get existing ID from localStorage
   const existingId = localStorage.getItem(ANONYMOUS_USER_KEY);
   if (existingId) {
-    // Set the anonymous ID in the request headers
-    supabase.rest.headers['anon-user-id'] = existingId;
+    // Set the anonymous ID using the proper method
+    supabase.headers['anon-user-id'] = existingId;
     return existingId;
   }
 
@@ -27,8 +27,8 @@ export const getOrCreateAnonymousId = async (): Promise<string> => {
   // Store the new ID
   localStorage.setItem(ANONYMOUS_USER_KEY, data.id);
   
-  // Set the anonymous ID in the request headers
-  supabase.rest.headers['anon-user-id'] = data.id;
+  // Set the anonymous ID using the proper method
+  supabase.headers['anon-user-id'] = data.id;
 
   return data.id;
 };
