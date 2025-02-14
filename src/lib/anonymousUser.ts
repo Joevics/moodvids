@@ -8,7 +8,13 @@ export const getOrCreateAnonymousId = async (): Promise<string> => {
   const existingId = localStorage.getItem(ANONYMOUS_USER_KEY);
   if (existingId) {
     // Set the anonymous ID using the proper method
-    supabase.headers['anon-user-id'] = existingId;
+    supabase.auth.setSession({
+      access_token: '',
+      refresh_token: '',
+    });
+    // Set custom header
+    supabase.supabaseUrl = supabase.supabaseUrl; // This triggers header update
+    supabase.additionalHeaders = { 'anon-user-id': existingId };
     return existingId;
   }
 
@@ -28,7 +34,13 @@ export const getOrCreateAnonymousId = async (): Promise<string> => {
   localStorage.setItem(ANONYMOUS_USER_KEY, data.id);
   
   // Set the anonymous ID using the proper method
-  supabase.headers['anon-user-id'] = data.id;
+  supabase.auth.setSession({
+    access_token: '',
+    refresh_token: '',
+  });
+  // Set custom header
+  supabase.supabaseUrl = supabase.supabaseUrl; // This triggers header update
+  supabase.additionalHeaders = { 'anon-user-id': data.id };
 
   return data.id;
 };
