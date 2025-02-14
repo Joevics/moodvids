@@ -69,20 +69,10 @@ export const MovieCard = ({ movie, onWatchToggle, onWatchlistToggle, onDelete }:
     }
   };
 
-  const handleDelete = () => {
-    if (onDelete) {
-      onDelete();
-      toast({
-        title: "Removed from recommendations",
-        description: movie.title,
-      });
-    }
-  };
-
   return (
-    <Card className="mb-4 overflow-hidden">
-      <div className="flex flex-col md:flex-row">
-        <Link to={`/movie/${movie.id}`} className="w-full md:w-48 flex-shrink-0">
+    <Card className="overflow-hidden transition-shadow hover:shadow-lg">
+      <Link to={`/movie/${movie.id}`} className="block">
+        <div className="grid grid-cols-[1fr,2fr] gap-4">
           <div className="relative aspect-[2/3]">
             {!imageLoaded && (
               <div className="absolute inset-0 bg-muted animate-pulse" />
@@ -97,61 +87,53 @@ export const MovieCard = ({ movie, onWatchToggle, onWatchlistToggle, onDelete }:
               onLoad={() => setImageLoaded(true)}
             />
           </div>
-        </Link>
-        
-        <div className="flex-1 p-4">
-          <Link to={`/movie/${movie.id}`}>
-            <h3 className="text-xl font-semibold mb-2 hover:text-primary transition-colors">
-              {movie.title}
-            </h3>
-          </Link>
           
-          <div className="flex items-center mb-2">
-            <Star className="w-4 h-4 text-yellow-400 mr-1" />
-            <span>{movie.vote_average.toFixed(1)}</span>
-          </div>
-          
-          <p className="text-muted-foreground mb-4 line-clamp-2">
-            {movie.overview}
-          </p>
-
-          {movie.providers && movie.providers.length > 0 && (
-            <div className="mb-4">
-              <p className="text-sm text-muted-foreground">
-                Available on: {movie.providers.join(', ')}
+          <div className="p-4 flex flex-col justify-between">
+            <div>
+              <h3 className="text-2xl font-semibold mb-2">{movie.title}</h3>
+              
+              <div className="flex items-center mb-4">
+                <Star className="w-5 h-5 text-yellow-400 mr-1" />
+                <span className="text-lg">{movie.vote_average.toFixed(1)}</span>
+              </div>
+              
+              <p className="text-muted-foreground line-clamp-3 mb-4">
+                {movie.overview}
               </p>
             </div>
-          )}
-          
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleWatch}
-              disabled={toggleWatch.isPending}
-            >
-              <Eye className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleWatchlist}
-              disabled={toggleWatchlist.isPending}
-            >
-              <Plus className="w-4 h-4" />
-            </Button>
-            {onDelete && (
+            
+            <div className="flex gap-2">
               <Button
                 variant="outline"
-                size="sm"
-                onClick={handleDelete}
+                size="icon"
+                onClick={(e) => { e.preventDefault(); handleWatch(); }}
+                disabled={toggleWatch.isPending}
+                className={cn(isWatched && "bg-primary text-primary-foreground")}
               >
-                <Trash2 className="w-4 h-4" />
+                <Eye className="w-4 h-4" />
               </Button>
-            )}
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={(e) => { e.preventDefault(); handleWatchlist(); }}
+                disabled={toggleWatchlist.isPending}
+                className={cn(inWatchlist && "bg-primary text-primary-foreground")}
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+              {onDelete && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={(e) => { e.preventDefault(); onDelete(); }}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      </Link>
     </Card>
   );
 };
