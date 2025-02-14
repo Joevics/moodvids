@@ -19,7 +19,7 @@ export const useWatchlist = () => {
 
       if (error) {
         console.error('Error fetching watchlist:', error);
-        return [];
+        throw error;
       }
       return data || [];
     }
