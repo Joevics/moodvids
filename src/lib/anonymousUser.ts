@@ -7,11 +7,16 @@ export const getOrCreateAnonymousId = async (): Promise<string> => {
   // Try to get existing ID from localStorage
   const existingId = localStorage.getItem(ANONYMOUS_USER_KEY);
   if (existingId) {
-    // Configure the client with the anonymous user ID header
-    supabase.headers = {
-      ...supabase.headers,
-      'anon-user-id': existingId
-    };
+    // Set the anonymous user ID in auth metadata
+    const { error } = await supabase.auth.setSession({
+      access_token: '',
+      refresh_token: '',
+    });
+
+    if (error) {
+      console.error('Error setting session:', error);
+    }
+
     return existingId;
   }
 
@@ -30,11 +35,15 @@ export const getOrCreateAnonymousId = async (): Promise<string> => {
   // Store the new ID
   localStorage.setItem(ANONYMOUS_USER_KEY, data.id);
   
-  // Configure the client with the anonymous user ID header
-  supabase.headers = {
-    ...supabase.headers,
-    'anon-user-id': data.id
-  };
+  // Set the anonymous user ID in auth metadata
+  const { error: sessionError } = await supabase.auth.setSession({
+    access_token: '',
+    refresh_token: '',
+  });
+
+  if (sessionError) {
+    console.error('Error setting session:', sessionError);
+  }
 
   return data.id;
 };
