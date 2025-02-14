@@ -1,11 +1,13 @@
 
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, Eye, Plus, Star } from "lucide-react";
 import { useWatchHistory } from "@/hooks/useWatchHistory";
 import { useWatchlist } from "@/hooks/useWatchlist";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Movie } from "@/types/movie";
 
 const MovieDetails = () => {
   const { id } = useParams();
@@ -13,23 +15,27 @@ const MovieDetails = () => {
   const { toggleWatch, isMovieWatched } = useWatchHistory();
   const { toggleWatchlist, isInWatchlist } = useWatchlist();
   const [isLoading, setIsLoading] = useState(true);
-  const [movie, setMovie] = useState<any>(null);
+  const [movie, setMovie] = useState<Movie | null>(null);
 
-  const fetchMovieDetails = async () => {
-    try {
-      // For now, we'll get the movie from the local storage recommendations
-      const recommendations = JSON.parse(localStorage.getItem('moodflix-recommendations') || '[]');
-      const foundMovie = recommendations.find((m: any) => m.id === Number(id));
-      setMovie(foundMovie);
-    } catch (error) {
-      console.error('Error fetching movie details:', error);
-      toast.error('Failed to load movie details');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  useEffect(() => {
+    const fetchMovieDetails = async () => {
+      try {
+        setIsLoading(true);
+        const recommendations = JSON.parse(localStorage.getItem('moodflix-recommendations') || '[]');
+        const foundMovie = recommendations.find((m: Movie) => m.id === Number(id));
+        if (foundMovie) {
+          setMovie(foundMovie);
+        } else {
+          toast.error('Movie not found');
+        }
+      } catch (error) {
+        console.error('Error fetching movie details:', error);
+        toast.error('Failed to load movie details');
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  useState(() => {
     fetchMovieDetails();
   }, [id]);
 

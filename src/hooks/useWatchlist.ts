@@ -1,100 +1,60 @@
 
-import { supabase } from "@/integrations/supabase/client";
 import { Movie } from "@/types/movie";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getOrCreateAnonymousId } from "@/lib/anonymousUser";
-import { toast } from "sonner";
+import { useState, useCallback, useEffect } from "react";
+
+const WATCHLIST_STORAGE_KEY = 'moodflix-watchlist';
+
+const getStoredWatchlist = (): Movie[] => {
+  const stored = localStorage.getItem(WATCHLIST_STORAGE_KEY);
+  return stored ? JSON.parse(stored) : [];
+};
 
 export const useWatchlist = () => {
   const queryClient = useQueryClient();
+  const [initialized, setInitialized] = useState(false);
 
-  const { data: watchlist = [], isLoading } = useQuery({
-    queryKey: ['watchlist'],
-    queryFn: async () => {
-      try {
-        const userId = await getOrCreateAnonymousId();
-        const { data, error } = await supabase
-          .from('watchlist')
-          .select('*')
-          .eq('user_id', userId)
-          .order('added_at', { ascending: false });
-
-        if (error) {
-          console.error('Error fetching watchlist:', error);
-          throw error;
-        }
-        return data || [];
-      } catch (error) {
-        console.error('Error in watchlist query:', error);
-        return [];
-      }
+  // Initialize from localStorage
+  useEffect(() => {
+    if (!initialized) {
+      queryClient.setQueryData(['watchlist'], getStoredWatchlist());
+      setInitialized(true);
     }
+  }, [queryClient, initialized]);
+
+  const { data: watchlist = [] } = useQuery({
+    queryKey: ['watchlist'],
+    queryFn: getStoredWatchlist,
+    staleTime: Infinity,
   });
 
   const toggleWatchlist = useMutation({
-    mutationFn: async ({ movie, isInWatchlist }: { movie: Movie, isInWatchlist: boolean }) => {
-      const userId = await getOrCreateAnonymousId();
+    mutationFn: async ({ movie }: { movie: Movie; isInWatchlist: boolean }) => {
+      const currentWatchlist = getStoredWatchlist();
+      const exists = currentWatchlist.some(item => item.id === movie.id);
       
-      if (isInWatchlist) {
-        const { error } = await supabase
-          .from('watchlist')
-          .delete()
-          .eq('user_id', userId)
-          .eq('movie_id', movie.id);
-
-        if (error) {
-          console.error('Error removing from watchlist:', error);
-          throw error;
-        }
-        toast.success('Removed from watchlist');
-        return null;
+      let newWatchlist;
+      if (exists) {
+        newWatchlist = currentWatchlist.filter(item => item.id !== movie.id);
       } else {
-        try {
-          const { data, error } = await supabase
-            .from('watchlist')
-            .upsert({
-              user_id: userId,
-              movie_id: movie.id,
-              movie_title: movie.title,
-              poster_path: movie.poster_path,
-              providers: movie.providers || []
-            }, {
-              onConflict: 'user_id,movie_id'
-            })
-            .select()
-            .single();
-
-          if (error) {
-            console.error('Error adding to watchlist:', error);
-            throw error;
-          }
-          toast.success('Added to watchlist');
-          return data;
-        } catch (error) {
-          if (error.code === '23505') { // Duplicate key error
-            console.log('Movie already in watchlist');
-            return null;
-          }
-          throw error;
-        }
+        newWatchlist = [...currentWatchlist, movie];
       }
+      
+      localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(newWatchlist));
+      return newWatchlist;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['watchlist'] });
-    },
-    onError: (error) => {
-      console.error('Watchlist operation failed:', error);
-      toast.error('Failed to update watchlist');
+    onSuccess: (newWatchlist) => {
+      queryClient.setQueryData(['watchlist'], newWatchlist);
     }
   });
 
-  const isInWatchlist = (movieId: number) => {
-    return watchlist.some(item => item.movie_id === movieId);
-  };
+  const isInWatchlist = useCallback((movieId: number) => {
+    return watchlist.some(item => item.id === movieId);
+  }, [watchlist]);
 
   return {
     watchlist,
-    isLoading,
+    isLoading: false,
     toggleWatchlist,
     isInWatchlist
   };

@@ -42,17 +42,31 @@ export const useRecommendations = (preferences?: MoviePreferences) => {
 
       if (error) throw error;
 
-      const newRecommendations = data.recommendations as Movie[];
+      const timestamp = new Date().toISOString();
+      const newRecommendations = data.recommendations.map((movie: Movie) => ({
+        ...movie,
+        generated_at: timestamp
+      }));
+      
       const existingRecommendations = getStoredRecommendations();
       
       // Combine new and existing recommendations, removing duplicates
-      const combined = [...existingRecommendations, ...newRecommendations];
+      const combined = [...newRecommendations, ...existingRecommendations];
       const unique = combined.filter((movie, index) => 
         combined.findIndex(m => m.id === movie.id) === index
       );
 
-      setStoredRecommendations(unique);
-      return unique;
+      // Sort by generation time, newest first
+      const sorted = unique.sort((a, b) => {
+        if (!a.generated_at && !b.generated_at) return 0;
+        if (!a.generated_at) return 1;
+        if (!b.generated_at) return -1;
+        return new Date(b.generated_at).getTime() - new Date(a.generated_at).getTime();
+      });
+
+      setStoredRecommendations(sorted);
+      localStorage.setItem('recommendations-generated-at', timestamp);
+      return sorted;
     },
     enabled: false,
     staleTime: Infinity,
