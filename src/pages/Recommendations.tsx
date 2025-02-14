@@ -32,6 +32,12 @@ const Recommendations = () => {
     }
   };
 
+  // Get the timestamp of when recommendations were last generated
+  const lastGeneratedAt = localStorage.getItem('recommendations-generated-at');
+  const isNewRecommendation = (movie: any) => {
+    return lastGeneratedAt && movie.generated_at && movie.generated_at > lastGeneratedAt;
+  };
+
   return (
     <div className="container py-4">
       <div className="flex justify-between items-center mb-4">
@@ -55,6 +61,7 @@ const Recommendations = () => {
                 onWatchToggle={() => handleWatchToggle(movie.id)}
                 onWatchlistToggle={() => handleWatchlistToggle(movie)}
                 onDelete={() => removeRecommendation.mutate(movie.id)}
+                isNew={isNewRecommendation(movie)}
               />
             ))}
           </div>

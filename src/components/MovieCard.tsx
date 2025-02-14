@@ -9,15 +9,17 @@ import { useToast } from "@/hooks/use-toast";
 import { useWatchHistory } from "@/hooks/useWatchHistory";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { Link } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
 
 interface MovieCardProps {
   movie: Movie;
   onWatchToggle?: () => void;
   onWatchlistToggle?: () => void;
   onDelete?: () => void;
+  isNew?: boolean;
 }
 
-export const MovieCard = ({ movie, onWatchToggle, onWatchlistToggle, onDelete }: MovieCardProps) => {
+export const MovieCard = ({ movie, onWatchToggle, onWatchlistToggle, onDelete, isNew }: MovieCardProps) => {
   const { toast } = useToast();
   const [imageLoaded, setImageLoaded] = useState(false);
   const { toggleWatch, isMovieWatched } = useWatchHistory();
@@ -88,21 +90,26 @@ export const MovieCard = ({ movie, onWatchToggle, onWatchlistToggle, onDelete }:
             />
           </div>
           
-          <div className="p-3 flex flex-col justify-between">
+          <div className="p-3 flex flex-col justify-between h-full">
             <div>
-              <h3 className="text-lg font-semibold mb-1">{movie.title}</h3>
+              <div className="flex items-start justify-between gap-2 mb-1">
+                <h3 className="text-base font-semibold line-clamp-2">{movie.title}</h3>
+                {isNew && (
+                  <Badge variant="secondary" className="shrink-0">New</Badge>
+                )}
+              </div>
               
               <div className="flex items-center mb-2">
                 <Star className="w-4 h-4 text-yellow-400 mr-1" />
                 <span>{movie.vote_average.toFixed(1)}</span>
               </div>
               
-              <p className="text-sm text-muted-foreground line-clamp-3">
+              <p className="text-sm text-muted-foreground line-clamp-2">
                 {movie.overview}
               </p>
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex gap-2 mt-2">
               <Button
                 variant="outline"
                 size="icon"
