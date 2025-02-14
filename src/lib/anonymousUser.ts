@@ -7,14 +7,18 @@ export const getOrCreateAnonymousId = async (): Promise<string> => {
   // Try to get existing ID from localStorage
   const existingId = localStorage.getItem(ANONYMOUS_USER_KEY);
   if (existingId) {
-    // Set the anonymous ID using the proper method
-    supabase.auth.setSession({
-      access_token: '',
-      refresh_token: '',
+    // Set custom header for anonymous user ID
+    const customHeaders = { 'anon-user-id': existingId };
+    
+    // Update the client's configuration
+    const { error } = await supabase.auth.updateUser({
+      data: { anonymousId: existingId }
     });
-    // Set custom header
-    supabase.supabaseUrl = supabase.supabaseUrl; // This triggers header update
-    supabase.additionalHeaders = { 'anon-user-id': existingId };
+
+    if (error) {
+      console.error('Error updating user data:', error);
+    }
+
     return existingId;
   }
 
@@ -33,14 +37,14 @@ export const getOrCreateAnonymousId = async (): Promise<string> => {
   // Store the new ID
   localStorage.setItem(ANONYMOUS_USER_KEY, data.id);
   
-  // Set the anonymous ID using the proper method
-  supabase.auth.setSession({
-    access_token: '',
-    refresh_token: '',
+  // Update the client's configuration with the new ID
+  const { error: updateError } = await supabase.auth.updateUser({
+    data: { anonymousId: data.id }
   });
-  // Set custom header
-  supabase.supabaseUrl = supabase.supabaseUrl; // This triggers header update
-  supabase.additionalHeaders = { 'anon-user-id': data.id };
+
+  if (updateError) {
+    console.error('Error updating user data:', updateError);
+  }
 
   return data.id;
 };
