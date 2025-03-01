@@ -1,8 +1,7 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, Eye, Plus, Star, Calendar } from "lucide-react";
+import { ChevronLeft, Eye, Plus, Star, Calendar, Globe } from "lucide-react";
 import { useWatchHistory } from "@/hooks/useWatchHistory";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { useEffect, useState } from "react";
@@ -29,13 +28,11 @@ const MovieDetails = () => {
         if (foundMovie) {
           setMovie(foundMovie);
           
-          // Extract year from release_date
           if (foundMovie.release_date) {
             const yearMatch = foundMovie.release_date.match(/^\d{4}/);
             setYear(yearMatch ? yearMatch[0] : "");
           }
           
-          // Fetch trailer from TMDB if not already available
           if (!foundMovie.trailer_key) {
             try {
               const response = await fetch(
@@ -70,7 +67,6 @@ const MovieDetails = () => {
     fetchMovieDetails();
   }, [id]);
 
-  // Function to get the streaming service logo URL
   const getStreamingLogo = (provider: string) => {
     const logoMap: Record<string, string> = {
       "Netflix": "https://cdn.jsdelivr.net/gh/PKief/vscode-material-icon-theme@master/icons/netflix.svg",
@@ -82,6 +78,11 @@ const MovieDetails = () => {
     };
 
     return logoMap[provider] || null;
+  };
+
+  const generateSearchUrl = (title: string, releaseYear: string) => {
+    const searchQuery = `${title} ${releaseYear} site:netflix.com OR site:primevideo.com OR site:disneyplus.com OR site:fzmovies.net OR site:fmovies.co OR site:9xmovies.com OR site:nkiri.com`;
+    return `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`;
   };
 
   if (isLoading) {
@@ -227,6 +228,16 @@ const MovieDetails = () => {
               </div>
             </div>
           )}
+          
+          <div className="mt-8">
+            <Button 
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 rounded-lg shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-[1.02] group"
+              onClick={() => window.open(generateSearchUrl(movie.title, year), '_blank')}
+            >
+              <Globe className="w-5 h-5 mr-2 group-hover:animate-pulse" />
+              Find Movie Online
+            </Button>
+          </div>
         </div>
       </div>
     </div>
