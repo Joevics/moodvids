@@ -39,10 +39,16 @@ export const useWatchHistory = () => {
         .single();
 
       if (error) throw error;
+      
+      // Update the cache immediately for real-time UI updates
+      const currentHistory = queryClient.getQueryData(['watchHistory']) || [];
+      const updatedHistory = isWatched 
+        ? [data, ...currentHistory.filter((item: any) => item.movie_id !== movie.id)]
+        : currentHistory.filter((item: any) => item.movie_id !== movie.id);
+      
+      queryClient.setQueryData(['watchHistory'], updatedHistory);
+      
       return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['watchHistory'] });
     }
   });
 

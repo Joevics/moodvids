@@ -78,10 +78,8 @@ export const useRecommendations = (preferences?: MoviePreferences) => {
       const current = getStoredRecommendations();
       const updated = current.filter(movie => movie.id !== movieId);
       setStoredRecommendations(updated);
-      return Promise.resolve();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['recommendations'] });
+      queryClient.setQueryData(['recommendations'], updated);
+      return Promise.resolve(updated);
     }
   });
 

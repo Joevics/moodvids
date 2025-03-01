@@ -29,7 +29,7 @@ export const useWatchlist = () => {
   });
 
   const toggleWatchlist = useMutation({
-    mutationFn: async ({ movie }: { movie: Movie; isInWatchlist: boolean }) => {
+    mutationFn: async ({ movie, isInWatchlist }: { movie: Movie; isInWatchlist: boolean }) => {
       const currentWatchlist = getStoredWatchlist();
       const exists = currentWatchlist.some(item => item.id === movie.id);
       
@@ -41,10 +41,11 @@ export const useWatchlist = () => {
       }
       
       localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(newWatchlist));
-      return newWatchlist;
-    },
-    onSuccess: (newWatchlist) => {
+      
+      // Immediately update the cache for real-time UI updates
       queryClient.setQueryData(['watchlist'], newWatchlist);
+      
+      return newWatchlist;
     }
   });
 

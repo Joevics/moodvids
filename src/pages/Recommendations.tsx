@@ -6,6 +6,7 @@ import { Loader2 } from "lucide-react";
 import { useEffect } from "react";
 import { useWatchHistory } from "@/hooks/useWatchHistory";
 import { useWatchlist } from "@/hooks/useWatchlist";
+import { Movie } from "@/types/movie";
 
 const Recommendations = () => {
   const { data: recommendations = [], isFetching, refetch, removeRecommendation } = useRecommendations();
@@ -16,11 +17,16 @@ const Recommendations = () => {
     refetch();
   }, [refetch]);
 
-  const handleWatchToggle = async (movieId: number) => {
-    await removeRecommendation.mutateAsync(movieId);
+  const handleWatchToggle = async (movie: Movie) => {
+    try {
+      await toggleWatch.mutateAsync({ movie, isWatched: true });
+      await removeRecommendation.mutateAsync(movie.id);
+    } catch (error) {
+      console.error('Error toggling watch status:', error);
+    }
   };
 
-  const handleWatchlistToggle = async (movie: any) => {
+  const handleWatchlistToggle = async (movie: Movie) => {
     try {
       await toggleWatchlist.mutateAsync({
         movie,
@@ -29,6 +35,14 @@ const Recommendations = () => {
       await removeRecommendation.mutateAsync(movie.id);
     } catch (error) {
       console.error('Error toggling watchlist:', error);
+    }
+  };
+
+  const handleDelete = async (movieId: number) => {
+    try {
+      await removeRecommendation.mutateAsync(movieId);
+    } catch (error) {
+      console.error('Error removing recommendation:', error);
     }
   };
 
@@ -58,9 +72,9 @@ const Recommendations = () => {
               <MovieCard 
                 key={movie.id} 
                 movie={movie} 
-                onWatchToggle={() => handleWatchToggle(movie.id)}
+                onWatchToggle={() => handleWatchToggle(movie)}
                 onWatchlistToggle={() => handleWatchlistToggle(movie)}
-                onDelete={() => removeRecommendation.mutate(movie.id)}
+                onDelete={() => handleDelete(movie.id)}
                 isNew={isNewRecommendation(movie)}
               />
             ))}

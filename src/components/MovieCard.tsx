@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Movie } from "@/types/movie";
 import { Eye, Plus, Trash2, Star } from "lucide-react";
@@ -26,16 +26,25 @@ export const MovieCard = ({ movie, onWatchToggle, onWatchlistToggle, onDelete, i
   const { toggleWatchlist, isInWatchlist } = useWatchlist();
   const [isWatched, setIsWatched] = useState(isMovieWatched(movie.id));
   const [inWatchlist, setInWatchlist] = useState(isInWatchlist(movie.id));
+  
+  // Update state when props change
+  useEffect(() => {
+    setIsWatched(isMovieWatched(movie.id));
+    setInWatchlist(isInWatchlist(movie.id));
+  }, [movie.id, isMovieWatched, isInWatchlist]);
 
-  const handleWatch = async () => {
+  const handleWatch = async (e: React.MouseEvent) => {
+    e.preventDefault();
     const newWatchedState = !isWatched;
     setIsWatched(newWatchedState);
+    
     try {
       await toggleWatch.mutateAsync({ movie, isWatched: newWatchedState });
       toast({
         title: newWatchedState ? "Added to watched" : "Removed from watched",
         description: movie.title,
       });
+      
       if (newWatchedState && onWatchToggle) {
         onWatchToggle();
       }
@@ -49,15 +58,18 @@ export const MovieCard = ({ movie, onWatchToggle, onWatchlistToggle, onDelete, i
     }
   };
 
-  const handleWatchlist = async () => {
+  const handleWatchlist = async (e: React.MouseEvent) => {
+    e.preventDefault();
     const newWatchlistState = !inWatchlist;
     setInWatchlist(newWatchlistState);
+    
     try {
       await toggleWatchlist.mutateAsync({ movie, isInWatchlist: !newWatchlistState });
       toast({
         title: newWatchlistState ? "Added to watchlist" : "Removed from watchlist",
         description: movie.title,
       });
+      
       if (newWatchlistState && onWatchlistToggle) {
         onWatchlistToggle();
       }
@@ -68,6 +80,13 @@ export const MovieCard = ({ movie, onWatchToggle, onWatchlistToggle, onDelete, i
         description: "Failed to update watchlist",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (onDelete) {
+      onDelete();
     }
   };
 
@@ -113,7 +132,7 @@ export const MovieCard = ({ movie, onWatchToggle, onWatchlistToggle, onDelete, i
               <Button
                 variant="outline"
                 size="icon"
-                onClick={(e) => { e.preventDefault(); handleWatch(); }}
+                onClick={handleWatch}
                 disabled={toggleWatch.isPending}
                 className={cn(isWatched && "bg-primary text-primary-foreground")}
               >
@@ -122,7 +141,7 @@ export const MovieCard = ({ movie, onWatchToggle, onWatchlistToggle, onDelete, i
               <Button
                 variant="outline"
                 size="icon"
-                onClick={(e) => { e.preventDefault(); handleWatchlist(); }}
+                onClick={handleWatchlist}
                 disabled={toggleWatchlist.isPending}
                 className={cn(inWatchlist && "bg-primary text-primary-foreground")}
               >
@@ -132,7 +151,7 @@ export const MovieCard = ({ movie, onWatchToggle, onWatchlistToggle, onDelete, i
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={(e) => { e.preventDefault(); onDelete(); }}
+                  onClick={handleDelete}
                 >
                   <Trash2 className="w-4 h-4" />
                 </Button>
