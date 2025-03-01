@@ -28,18 +28,10 @@ const Watchlist = () => {
       <h1 className="text-2xl font-bold mb-4">Your Watchlist</h1>
       <ScrollArea className="h-[calc(100vh-12rem)]">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {watchlist.map((item) => (
+          {watchlist.map((movie) => (
             <MovieCard
-              key={item.id}
-              movie={{
-                id: item.movie_id,
-                title: item.movie_title,
-                poster_path: item.poster_path || "",
-                overview: "",
-                release_date: "",
-                vote_average: 0,
-                genres: [],
-              }}
+              key={movie.id}
+              movie={movie}
             />
           ))}
         </div>
