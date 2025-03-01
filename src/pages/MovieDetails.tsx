@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +8,7 @@ import { useWatchlist } from "@/hooks/useWatchlist";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Movie } from "@/types/movie";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const MovieDetails = () => {
   const { id } = useParams();
@@ -88,9 +90,17 @@ const MovieDetails = () => {
   if (isLoading) {
     return (
       <div className="container py-8">
-        <div className="animate-pulse">
-          <div className="h-8 w-48 bg-muted rounded mb-4" />
-          <div className="h-64 bg-muted rounded" />
+        <div className="animate-pulse space-y-8">
+          <div className="h-10 w-48 bg-muted rounded" />
+          <div className="grid md:grid-cols-[300px,1fr] gap-8">
+            <div className="h-[450px] bg-muted rounded-lg" />
+            <div className="space-y-4">
+              <div className="h-12 bg-muted rounded w-3/4" />
+              <div className="h-4 bg-muted rounded w-1/4" />
+              <div className="h-32 bg-muted rounded" />
+              <div className="h-10 bg-muted rounded w-1/3" />
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -133,63 +143,123 @@ const MovieDetails = () => {
   };
 
   return (
-    <div className="container py-8">
-      <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6">
+    <div className="container py-8 max-w-6xl mx-auto">
+      <Button 
+        variant="ghost" 
+        onClick={() => navigate(-1)} 
+        className="mb-8 hover:bg-secondary/30 transition-all duration-300"
+      >
         <ChevronLeft className="w-4 h-4 mr-2" />
         Back
       </Button>
 
-      <div className="grid md:grid-cols-[300px,1fr] gap-8">
-        <div className="relative aspect-[2/3] rounded-lg overflow-hidden">
-          <img
-            src={`https://image.tmdb.org/t/p/original${movie.poster_path}`}
-            alt={movie.title}
-            className="object-cover w-full h-full"
-          />
+      <div className="grid md:grid-cols-[320px,1fr] gap-12">
+        {/* Movie Poster */}
+        <div className="space-y-6">
+          <div className="relative aspect-[2/3] rounded-xl overflow-hidden shadow-xl border border-muted/20 transform hover:scale-[1.02] transition-all duration-300">
+            <img
+              src={`https://image.tmdb.org/t/p/original${movie.poster_path}`}
+              alt={movie.title}
+              className="object-cover w-full h-full"
+            />
+            <div className="absolute top-3 right-3 bg-background/80 backdrop-blur-sm p-2 rounded-lg">
+              <div className="flex items-center">
+                <Star className="w-5 h-5 text-yellow-400 mr-1" />
+                <span className="font-bold">{movie.vote_average.toFixed(1)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-col gap-3">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={isMovieWatched(movie.id) ? "default" : "outline"}
+                    onClick={handleWatchToggle}
+                    disabled={toggleWatch.isPending}
+                    className="w-full justify-center transition-all duration-300"
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    {isMovieWatched(movie.id) ? 'Watched' : 'Mark as watched'}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{isMovieWatched(movie.id) ? 'Remove from watched' : 'Add to watched'}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={isInWatchlist(movie.id) ? "default" : "outline"}
+                    onClick={handleWatchlistToggle}
+                    disabled={toggleWatchlist.isPending}
+                    className="w-full justify-center transition-all duration-300"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    {isInWatchlist(movie.id) ? 'In watchlist' : 'Add to watchlist'}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{isInWatchlist(movie.id) ? 'Remove from watchlist' : 'Add to watchlist'}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+
+          {/* Streaming Services */}
+          {movie.providers && movie.providers.length > 0 && (
+            <div className="bg-secondary/20 backdrop-blur-sm rounded-xl p-5 border border-muted/10">
+              <h2 className="text-lg font-semibold mb-3 text-primary">Available on</h2>
+              <div className="flex flex-wrap gap-4">
+                {movie.providers.map((provider: string) => {
+                  const logoUrl = getStreamingLogo(provider);
+                  return logoUrl ? (
+                    <div key={provider} className="flex flex-col items-center group">
+                      <div className="w-12 h-12 p-2 rounded-full bg-background/50 backdrop-blur-md flex items-center justify-center border border-muted/20 shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:scale-110">
+                        <img
+                          src={logoUrl}
+                          alt={provider}
+                          className="w-8 h-8 object-contain"
+                          title={provider}
+                        />
+                      </div>
+                      <span className="text-xs mt-1 opacity-80 group-hover:opacity-100">{provider}</span>
+                    </div>
+                  ) : (
+                    <Badge key={provider} variant="secondary" className="bg-background/50 backdrop-blur-md">
+                      {provider}
+                    </Badge>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
-        <div>
-          <div className="flex items-start justify-between gap-4 mb-2">
-            <div>
-              <h1 className="text-3xl font-bold">{movie.title}</h1>
-              {year && (
-                <div className="flex items-center text-muted-foreground mt-1">
-                  <Calendar className="w-4 h-4 mr-1" />
-                  <span>{year}</span>
-                </div>
-              )}
-            </div>
-            <div className="flex items-center">
-              <Star className="w-5 h-5 text-yellow-400 mr-1" />
-              <span className="text-lg">{movie.vote_average.toFixed(1)}</span>
-            </div>
+        {/* Movie Details */}
+        <div className="space-y-8">
+          <div className="space-y-2">
+            <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">{movie.title}</h1>
+            {year && (
+              <div className="flex items-center text-muted-foreground">
+                <Calendar className="w-4 h-4 mr-2" />
+                <span className="text-sm">{year}</span>
+              </div>
+            )}
           </div>
 
-          <p className="text-lg text-muted-foreground mb-6">{movie.overview}</p>
+          <p className="text-lg leading-relaxed text-muted-foreground border-l-4 border-primary/30 pl-4 py-1">{movie.overview}</p>
 
-          <div className="flex gap-4 mb-8">
-            <Button
-              variant={isMovieWatched(movie.id) ? "default" : "outline"}
-              onClick={handleWatchToggle}
-              disabled={toggleWatch.isPending}
-            >
-              <Eye className="w-4 h-4 mr-2" />
-              {isMovieWatched(movie.id) ? 'Watched' : 'Mark as watched'}
-            </Button>
-            <Button
-              variant={isInWatchlist(movie.id) ? "default" : "outline"}
-              onClick={handleWatchlistToggle}
-              disabled={toggleWatchlist.isPending}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              {isInWatchlist(movie.id) ? 'In watchlist' : 'Add to watchlist'}
-            </Button>
-          </div>
-
+          {/* Trailer */}
           {trailerKey && (
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold mb-3">Trailer</h2>
-              <div className="relative aspect-video rounded-lg overflow-hidden">
+            <div className="space-y-4">
+              <h2 className="text-2xl font-semibold">Trailer</h2>
+              <div className="relative aspect-video rounded-xl overflow-hidden shadow-xl border border-muted/20">
                 <iframe
                   src={`https://www.youtube.com/embed/${trailerKey}`}
                   title={`${movie.title} trailer`}
@@ -201,38 +271,12 @@ const MovieDetails = () => {
             </div>
           )}
 
-          {movie.providers && movie.providers.length > 0 && (
-            <div>
-              <h2 className="text-xl font-semibold mb-3">Available on</h2>
-              <div className="flex flex-wrap gap-4">
-                {movie.providers.map((provider: string) => {
-                  const logoUrl = getStreamingLogo(provider);
-                  return logoUrl ? (
-                    <div key={provider} className="flex flex-col items-center">
-                      <div className="w-12 h-12 p-2 rounded-full bg-white/10 flex items-center justify-center">
-                        <img
-                          src={logoUrl}
-                          alt={provider}
-                          className="w-8 h-8 object-contain"
-                          title={provider}
-                        />
-                      </div>
-                      <span className="text-xs mt-1">{provider}</span>
-                    </div>
-                  ) : (
-                    <Badge key={provider} variant="secondary">
-                      {provider}
-                    </Badge>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-          
-          <div className="mt-8">
+          {/* Find Movie Online Button */}
+          <div className="pt-4">
             <Button 
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 rounded-lg shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-[1.02] group"
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-6 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-[1.01] group"
               onClick={() => window.open(generateSearchUrl(movie.title, year), '_blank')}
+              size="lg"
             >
               <Globe className="w-5 h-5 mr-2 group-hover:animate-pulse" />
               Find Movie Online
