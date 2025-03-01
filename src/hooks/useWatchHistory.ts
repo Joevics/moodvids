@@ -4,6 +4,17 @@ import { Movie } from "@/types/movie";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getOrCreateAnonymousId } from "@/lib/anonymousUser";
 
+// Define a type for the watch history items
+interface WatchHistoryItem {
+  id: string;
+  user_id: string;
+  movie_id: number;
+  movie_title: string;
+  poster_path: string | null;
+  is_watched: boolean;
+  watched_at: string;
+}
+
 export const useWatchHistory = () => {
   const queryClient = useQueryClient();
 
@@ -41,10 +52,10 @@ export const useWatchHistory = () => {
       if (error) throw error;
       
       // Update the cache immediately for real-time UI updates
-      const currentHistory = queryClient.getQueryData(['watchHistory']) || [];
+      const currentHistory = queryClient.getQueryData(['watchHistory']) as WatchHistoryItem[] || [];
       const updatedHistory = isWatched 
-        ? [data, ...currentHistory.filter((item: any) => item.movie_id !== movie.id)]
-        : currentHistory.filter((item: any) => item.movie_id !== movie.id);
+        ? [data, ...currentHistory.filter(item => item.movie_id !== movie.id)]
+        : currentHistory.filter(item => item.movie_id !== movie.id);
       
       queryClient.setQueryData(['watchHistory'], updatedHistory);
       
