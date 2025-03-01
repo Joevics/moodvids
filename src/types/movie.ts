@@ -1,4 +1,3 @@
-
 export interface Movie {
   id: number;
   title: string;
@@ -8,6 +7,7 @@ export interface Movie {
   vote_average: number;
   genres: string[];
   providers?: string[];
+  trailer_key?: string;
 }
 
 export type Mood =
