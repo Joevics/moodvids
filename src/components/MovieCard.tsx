@@ -17,9 +17,17 @@ interface MovieCardProps {
   onWatchlistToggle?: () => void;
   onDelete?: () => void;
   isNew?: boolean;
+  showFullDetails?: boolean;
 }
 
-export const MovieCard = ({ movie, onWatchToggle, onWatchlistToggle, onDelete, isNew }: MovieCardProps) => {
+export const MovieCard = ({ 
+  movie, 
+  onWatchToggle, 
+  onWatchlistToggle, 
+  onDelete, 
+  isNew,
+  showFullDetails = true
+}: MovieCardProps) => {
   const { toast } = useToast();
   const [imageLoaded, setImageLoaded] = useState(false);
   const { toggleWatch, isMovieWatched } = useWatchHistory();
@@ -45,7 +53,7 @@ export const MovieCard = ({ movie, onWatchToggle, onWatchlistToggle, onDelete, i
         description: movie.title,
       });
       
-      if (newWatchedState && onWatchToggle) {
+      if (onWatchToggle) {
         onWatchToggle();
       }
     } catch (error) {
@@ -64,13 +72,13 @@ export const MovieCard = ({ movie, onWatchToggle, onWatchlistToggle, onDelete, i
     setInWatchlist(newWatchlistState);
     
     try {
-      await toggleWatchlist.mutateAsync({ movie, isInWatchlist: !newWatchlistState });
+      await toggleWatchlist.mutateAsync({ movie, isInWatchlist: inWatchlist });
       toast({
         title: newWatchlistState ? "Added to watchlist" : "Removed from watchlist",
         description: movie.title,
       });
       
-      if (newWatchlistState && onWatchlistToggle) {
+      if (onWatchlistToggle) {
         onWatchlistToggle();
       }
     } catch (error) {
@@ -90,6 +98,31 @@ export const MovieCard = ({ movie, onWatchToggle, onWatchlistToggle, onDelete, i
     }
   };
 
+  // Simple poster-only view
+  if (!showFullDetails) {
+    return (
+      <Card className="overflow-hidden transition-shadow hover:shadow-lg">
+        <Link to={`/movie/${movie.id}`} className="block">
+          <div className="relative aspect-[2/3]">
+            {!imageLoaded && (
+              <div className="absolute inset-0 bg-muted animate-pulse" />
+            )}
+            <img
+              src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+              alt={movie.title}
+              className={cn(
+                "object-cover w-full h-full",
+                !imageLoaded && "opacity-0"
+              )}
+              onLoad={() => setImageLoaded(true)}
+            />
+          </div>
+        </Link>
+      </Card>
+    );
+  }
+
+  // Full details view
   return (
     <Card className="overflow-hidden transition-shadow hover:shadow-lg">
       <Link to={`/movie/${movie.id}`} className="block">

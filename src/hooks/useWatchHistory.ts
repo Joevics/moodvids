@@ -29,7 +29,7 @@ export const useWatchHistory = () => {
         .order('watched_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      return data as WatchHistoryItem[] || [];
     }
   });
 
@@ -54,7 +54,7 @@ export const useWatchHistory = () => {
       // Update the cache immediately for real-time UI updates
       const currentHistory = queryClient.getQueryData(['watchHistory']) as WatchHistoryItem[] || [];
       const updatedHistory = isWatched 
-        ? [data, ...currentHistory.filter(item => item.movie_id !== movie.id)]
+        ? [data as WatchHistoryItem, ...currentHistory.filter(item => item.movie_id !== movie.id)]
         : currentHistory.filter(item => item.movie_id !== movie.id);
       
       queryClient.setQueryData(['watchHistory'], updatedHistory);

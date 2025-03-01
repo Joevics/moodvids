@@ -31,12 +31,13 @@ export const useWatchlist = () => {
   const toggleWatchlist = useMutation({
     mutationFn: async ({ movie, isInWatchlist }: { movie: Movie; isInWatchlist: boolean }) => {
       const currentWatchlist = getStoredWatchlist();
-      const exists = currentWatchlist.some(item => item.id === movie.id);
       
       let newWatchlist;
-      if (exists) {
+      if (isInWatchlist) {
+        // Remove from watchlist
         newWatchlist = currentWatchlist.filter(item => item.id !== movie.id);
       } else {
+        // Add to watchlist
         newWatchlist = [...currentWatchlist, movie];
       }
       
