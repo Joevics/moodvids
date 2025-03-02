@@ -1,3 +1,4 @@
+
 export interface Movie {
   id: number;
   title: string;
@@ -8,6 +9,19 @@ export interface Movie {
   genres: string[];
   providers?: string[];
   trailer_key?: string;
+  streaming_options?: StreamingOptions;
+}
+
+export interface StreamingOptions {
+  rent?: StreamingProvider[];
+  buy?: StreamingProvider[];
+  stream?: StreamingProvider[];
+}
+
+export interface StreamingProvider {
+  provider: string;
+  url: string;
+  logo?: string;
 }
 
 export type Mood =

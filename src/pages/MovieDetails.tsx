@@ -6,9 +6,10 @@ import { useWatchHistory } from "@/hooks/useWatchHistory";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Movie } from "@/types/movie";
+import { Movie, StreamingOptions } from "@/types/movie";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { WatchOptions } from "@/components/WatchOptions";
 
 const MovieDetails = () => {
   const { id } = useParams();
@@ -19,6 +20,7 @@ const MovieDetails = () => {
   const [movie, setMovie] = useState<Movie | null>(null);
   const [year, setYear] = useState<string>("");
   const [trailerKey, setTrailerKey] = useState<string | null>(null);
+  const [streamingOptions, setStreamingOptions] = useState<StreamingOptions | null>(null);
 
   useEffect(() => {
     const fetchMovieDetails = async () => {
@@ -272,6 +274,12 @@ const MovieDetails = () => {
               </div>
             </div>
           )}
+
+          <WatchOptions 
+            streamingOptions={streamingOptions} 
+            title={movie.title} 
+            year={year} 
+          />
 
           <div className="pt-4">
             <Accordion type="single" collapsible className="w-full border rounded-xl overflow-hidden shadow-lg bg-gradient-to-r from-blue-600/5 to-purple-600/5 hover:from-blue-600/10 hover:to-purple-600/10 transition-all duration-300">
