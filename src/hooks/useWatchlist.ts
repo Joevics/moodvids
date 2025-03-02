@@ -1,4 +1,3 @@
-
 import { Movie } from "@/types/movie";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useCallback, useEffect } from "react";
@@ -37,8 +36,15 @@ export const useWatchlist = () => {
         // Remove from watchlist
         newWatchlist = currentWatchlist.filter(item => item.id !== movie.id);
       } else {
-        // Add to watchlist
-        newWatchlist = [...currentWatchlist, movie];
+        // Check if movie already exists in watchlist to prevent duplicates
+        const existingMovie = currentWatchlist.find(item => item.id === movie.id);
+        if (!existingMovie) {
+          // Add to watchlist only if it doesn't exist already
+          newWatchlist = [...currentWatchlist, movie];
+        } else {
+          // Movie already exists, return current watchlist unchanged
+          newWatchlist = currentWatchlist;
+        }
       }
       
       localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(newWatchlist));

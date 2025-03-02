@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -199,7 +198,7 @@ const MovieDetails = () => {
             <p className="text-md leading-relaxed text-muted-foreground border-l-4 border-primary/30 pl-4 py-1">{movie.overview}</p>
           </div>
 
-          <div className="flex flex-col gap-3">
+          <div className="flex gap-3">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -207,7 +206,7 @@ const MovieDetails = () => {
                     variant={isMovieWatched(movie.id) ? "default" : "outline"}
                     onClick={handleWatchToggle}
                     disabled={toggleWatch.isPending}
-                    className="w-full justify-center transition-all duration-300"
+                    className="flex-1 justify-center transition-all duration-300"
                   >
                     <Eye className="w-4 h-4 mr-2" />
                     {isMovieWatched(movie.id) ? 'Watched' : 'Mark as watched'}
@@ -226,7 +225,7 @@ const MovieDetails = () => {
                     variant={isInWatchlist(movie.id) ? "default" : "outline"}
                     onClick={handleWatchlistToggle}
                     disabled={toggleWatchlist.isPending}
-                    className="w-full justify-center transition-all duration-300"
+                    className="flex-1 justify-center transition-all duration-300"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     {isInWatchlist(movie.id) ? 'In watchlist' : 'Add to watchlist'}
@@ -238,6 +237,23 @@ const MovieDetails = () => {
               </Tooltip>
             </TooltipProvider>
           </div>
+        </div>
+
+        <div className="space-y-8">
+          {trailerKey && (
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold">Trailer</h2>
+              <div className="relative aspect-video rounded-xl overflow-hidden shadow-xl border border-muted/20">
+                <iframe
+                  src={`https://www.youtube.com/embed/${trailerKey}`}
+                  title={`${movie.title} trailer`}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="absolute inset-0 w-full h-full"
+                />
+              </div>
+            </div>
+          )}
 
           {movie.providers && movie.providers.length > 0 && (
             <div className="bg-secondary/20 backdrop-blur-sm rounded-xl p-5 border border-muted/10">
@@ -263,23 +279,6 @@ const MovieDetails = () => {
                     </Badge>
                   );
                 })}
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-8">
-          {trailerKey && (
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold">Trailer</h2>
-              <div className="relative aspect-video rounded-xl overflow-hidden shadow-xl border border-muted/20">
-                <iframe
-                  src={`https://www.youtube.com/embed/${trailerKey}`}
-                  title={`${movie.title} trailer`}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  className="absolute inset-0 w-full h-full"
-                />
               </div>
             </div>
           )}

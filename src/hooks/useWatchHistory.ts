@@ -37,6 +37,9 @@ export const useWatchHistory = () => {
     mutationFn: async ({ movie, isWatched }: { movie: Movie, isWatched: boolean }) => {
       const userId = await getOrCreateAnonymousId();
       
+      // Check for existing entry to prevent duplicates in UI
+      const existingEntry = watchHistory.find(item => item.movie_id === movie.id);
+      
       const { data, error } = await supabase
         .from('watch_history')
         .upsert({
@@ -44,7 +47,8 @@ export const useWatchHistory = () => {
           movie_id: movie.id,
           movie_title: movie.title,
           poster_path: movie.poster_path,
-          is_watched: isWatched
+          is_watched: isWatched,
+          watched_at: new Date().toISOString()
         })
         .select()
         .single();
@@ -52,12 +56,12 @@ export const useWatchHistory = () => {
       if (error) throw error;
       
       // Update the cache immediately for real-time UI updates
-      const currentHistory = queryClient.getQueryData(['watchHistory']) as WatchHistoryItem[] || [];
-      const updatedHistory = isWatched 
-        ? [data as WatchHistoryItem, ...currentHistory.filter(item => item.movie_id !== movie.id)]
-        : currentHistory.filter(item => item.movie_id !== movie.id);
+      // Making sure we replace the existing item with the updated one
+      const updatedHistory = existingEntry
+        ? watchHistory.map(item => item.movie_id === movie.id ? data as WatchHistoryItem : item)
+        : [data as WatchHistoryItem, ...watchHistory.filter(item => item.movie_id !== movie.id)];
       
-      queryClient.setQueryData(['watchHistory'], updatedHistory);
+      queryClient.setQueryData(['watchHistory'], isWatched ? updatedHistory : watchHistory.filter(item => item.movie_id !== movie.id));
       
       return data;
     }

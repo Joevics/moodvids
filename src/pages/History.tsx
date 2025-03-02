@@ -3,6 +3,7 @@ import { useWatchHistory } from "@/hooks/useWatchHistory";
 import { MovieCard } from "@/components/MovieCard";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "react-router-dom";
 
 const History = () => {
   const { watchHistory, isLoading } = useWatchHistory();
@@ -24,21 +25,23 @@ const History = () => {
     <div className="container py-4">
       <h1 className="text-2xl font-bold mb-4">Watch History</h1>
       <ScrollArea className="h-[calc(100vh-12rem)]">
-        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
           {watchHistory.map((item) => (
-            <MovieCard
-              key={item.id}
-              movie={{
-                id: item.movie_id,
-                title: item.movie_title,
-                poster_path: item.poster_path || "",
-                overview: "",
-                release_date: "",
-                vote_average: 0,
-                genres: [],
-              }}
-              showFullDetails={false}
-            />
+            <Link to={`/movie/${item.movie_id}`} key={item.id} className="block transition-transform hover:scale-105">
+              <MovieCard
+                key={item.id}
+                movie={{
+                  id: item.movie_id,
+                  title: item.movie_title,
+                  poster_path: item.poster_path || "",
+                  overview: "",
+                  release_date: "",
+                  vote_average: 0,
+                  genres: [],
+                }}
+                showFullDetails={false}
+              />
+            </Link>
           ))}
         </div>
       </ScrollArea>
