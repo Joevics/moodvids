@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -56,76 +57,6 @@ const MovieDetails = () => {
             }
           } else {
             setTrailerKey(foundMovie.trailer_key);
-          }
-          
-          try {
-            const query = encodeURIComponent(`${foundMovie.title} ${year}`);
-            const response = await fetch(`https://apis.justwatch.com/content/titles/en_US?query=${query}`);
-            
-            if (!response.ok) {
-              throw new Error('JustWatch API request failed');
-            }
-            
-            const data = await response.json();
-            const relevantItem = data.items?.find((item: any) => 
-              item.title.toLowerCase() === foundMovie.title.toLowerCase()
-            );
-            
-            if (relevantItem && relevantItem.offers) {
-              const options: StreamingOptions = {
-                stream: [],
-                rent: [],
-                buy: []
-              };
-              
-              relevantItem.offers.forEach((offer: any) => {
-                const providerInfo = {
-                  provider: offer.provider,
-                  url: offer.link || generateSearchUrl(foundMovie.title, year, offer.provider)
-                };
-                
-                if (offer.monetization_type === "flatrate") {
-                  options.stream?.push(providerInfo);
-                } else if (offer.monetization_type === "rent") {
-                  options.rent?.push(providerInfo);
-                } else if (offer.monetization_type === "buy") {
-                  options.buy?.push(providerInfo);
-                }
-              });
-              
-              setStreamingOptions(options);
-            } else {
-              setStreamingOptions({
-                stream: [
-                  { provider: "Netflix", url: generateSearchUrl(foundMovie.title, year, "Netflix") },
-                  { provider: "Disney+", url: generateSearchUrl(foundMovie.title, year, "Disney+") }
-                ],
-                rent: [
-                  { provider: "Amazon Video", url: generateSearchUrl(foundMovie.title, year, "Amazon Video") },
-                  { provider: "Google Play Movies", url: generateSearchUrl(foundMovie.title, year, "Google Play Movies") }
-                ],
-                buy: [
-                  { provider: "Apple TV", url: generateSearchUrl(foundMovie.title, year, "Apple TV") },
-                  { provider: "YouTube", url: generateSearchUrl(foundMovie.title, year, "YouTube") }
-                ]
-              });
-            }
-          } catch (error) {
-            console.error("Failed to fetch streaming options:", error);
-            setStreamingOptions({
-              stream: [
-                { provider: "Netflix", url: generateSearchUrl(foundMovie.title, year, "Netflix") },
-                { provider: "Disney+", url: generateSearchUrl(foundMovie.title, year, "Disney+") }
-              ],
-              rent: [
-                { provider: "Amazon Video", url: generateSearchUrl(foundMovie.title, year, "Amazon Video") },
-                { provider: "Google Play Movies", url: generateSearchUrl(foundMovie.title, year, "Google Play Movies") }
-              ],
-              buy: [
-                { provider: "Apple TV", url: generateSearchUrl(foundMovie.title, year, "Apple TV") },
-                { provider: "YouTube", url: generateSearchUrl(foundMovie.title, year, "YouTube") }
-              ]
-            });
           }
         } else {
           toast.error('Movie not found');
