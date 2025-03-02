@@ -1,14 +1,14 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, Eye, Plus, Star, Calendar, Globe } from "lucide-react";
+import { ChevronLeft, Eye, Plus, Star, Calendar, Globe, Search } from "lucide-react";
 import { useWatchHistory } from "@/hooks/useWatchHistory";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Movie } from "@/types/movie";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 const MovieDetails = () => {
   const { id } = useParams();
@@ -82,8 +82,8 @@ const MovieDetails = () => {
     return logoMap[provider] || null;
   };
 
-  const generateSearchUrl = (title: string, releaseYear: string) => {
-    const searchQuery = `${title} ${releaseYear} site:netflix.com OR site:primevideo.com OR site:disneyplus.com OR site:fzmovies.net OR site:fmovies.co OR site:9xmovies.com OR site:nkiri.com`;
+  const generateSearchUrl = (title: string, releaseYear: string, site: string) => {
+    const searchQuery = `${title} ${releaseYear} ${site}`;
     return `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`;
   };
 
@@ -142,6 +142,13 @@ const MovieDetails = () => {
     }
   };
 
+  const movieSites = [
+    { name: "FZMovies", site: "fzmovies.net", description: "Popular for direct downloads" },
+    { name: "9XMovies", site: "9xmovies.com", description: "Large collection of movies and series" },
+    { name: "Nkiri", site: "nkiri.com", description: "Nigerian and international content" },
+    { name: "FMovies", site: "fmovies.co", description: "Streaming site with minimal ads" }
+  ];
+
   return (
     <div className="container py-8 max-w-6xl mx-auto">
       <Button 
@@ -154,7 +161,6 @@ const MovieDetails = () => {
       </Button>
 
       <div className="grid md:grid-cols-[320px,1fr] gap-12">
-        {/* Movie Poster */}
         <div className="space-y-6">
           <div className="relative aspect-[2/3] rounded-xl overflow-hidden shadow-xl border border-muted/20 transform hover:scale-[1.02] transition-all duration-300">
             <img
@@ -170,7 +176,6 @@ const MovieDetails = () => {
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div className="flex flex-col gap-3">
             <TooltipProvider>
               <Tooltip>
@@ -211,7 +216,6 @@ const MovieDetails = () => {
             </TooltipProvider>
           </div>
 
-          {/* Streaming Services */}
           {movie.providers && movie.providers.length > 0 && (
             <div className="bg-secondary/20 backdrop-blur-sm rounded-xl p-5 border border-muted/10">
               <h2 className="text-lg font-semibold mb-3 text-primary">Available on</h2>
@@ -241,7 +245,6 @@ const MovieDetails = () => {
           )}
         </div>
 
-        {/* Movie Details */}
         <div className="space-y-8">
           <div className="space-y-2">
             <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">{movie.title}</h1>
@@ -255,7 +258,6 @@ const MovieDetails = () => {
 
           <p className="text-lg leading-relaxed text-muted-foreground border-l-4 border-primary/30 pl-4 py-1">{movie.overview}</p>
 
-          {/* Trailer */}
           {trailerKey && (
             <div className="space-y-4">
               <h2 className="text-2xl font-semibold">Trailer</h2>
@@ -271,16 +273,43 @@ const MovieDetails = () => {
             </div>
           )}
 
-          {/* Find Movie Online Button */}
           <div className="pt-4">
-            <Button 
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-6 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-[1.01] group"
-              onClick={() => window.open(generateSearchUrl(movie.title, year), '_blank')}
-              size="lg"
-            >
-              <Globe className="w-5 h-5 mr-2 group-hover:animate-pulse" />
-              Find Movie Online
-            </Button>
+            <Accordion type="single" collapsible className="w-full border rounded-xl overflow-hidden shadow-lg bg-gradient-to-r from-blue-600/5 to-purple-600/5 hover:from-blue-600/10 hover:to-purple-600/10 transition-all duration-300">
+              <AccordionItem value="find-movie" className="border-none">
+                <AccordionTrigger className="py-5 px-5 hover:no-underline bg-gradient-to-r from-blue-600/10 to-purple-600/10 group">
+                  <div className="flex items-center">
+                    <Globe className="w-5 h-5 mr-3 group-hover:animate-pulse text-primary" />
+                    <span className="text-lg font-semibold">Find Movie Online</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-5 pb-5 pt-3">
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Click on any of the links below to search for "{movie.title}" on Google along with the specific movie site.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {movieSites.map((site) => (
+                        <a 
+                          key={site.name}
+                          href={generateSearchUrl(movie.title, year, site.site)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center p-3 rounded-lg bg-background/50 hover:bg-background/80 border border-muted/20 transition-all duration-300 hover:scale-[1.02] group"
+                        >
+                          <div className="bg-primary/10 p-2 rounded-full mr-3">
+                            <Search className="w-4 h-4 text-primary group-hover:text-primary" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium">{site.name}</p>
+                            <p className="text-xs text-muted-foreground">{site.description}</p>
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </div>
         </div>
       </div>
