@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -178,6 +179,26 @@ const MovieDetails = () => {
             </div>
           </div>
 
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">{movie.title}</h1>
+              <div className="flex items-center text-muted-foreground gap-4">
+                {year && (
+                  <div className="flex items-center">
+                    <Calendar className="w-4 h-4 mr-2" />
+                    <span className="text-sm">{year}</span>
+                  </div>
+                )}
+                <div className="flex items-center">
+                  <Star className="w-4 h-4 text-yellow-400 mr-2" />
+                  <span className="text-sm">{movie.vote_average.toFixed(1)}</span>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-md leading-relaxed text-muted-foreground border-l-4 border-primary/30 pl-4 py-1">{movie.overview}</p>
+          </div>
+
           <div className="flex flex-col gap-3">
             <TooltipProvider>
               <Tooltip>
@@ -248,21 +269,9 @@ const MovieDetails = () => {
         </div>
 
         <div className="space-y-8">
-          <div className="space-y-2">
-            <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">{movie.title}</h1>
-            {year && (
-              <div className="flex items-center text-muted-foreground">
-                <Calendar className="w-4 h-4 mr-2" />
-                <span className="text-sm">{year}</span>
-              </div>
-            )}
-          </div>
-
-          <p className="text-lg leading-relaxed text-muted-foreground border-l-4 border-primary/30 pl-4 py-1">{movie.overview}</p>
-
           {trailerKey && (
             <div className="space-y-4">
-              <h2 className="text-2xl font-semibold">Trailer</h2>
+              <h2 className="text-xl font-semibold">Trailer</h2>
               <div className="relative aspect-video rounded-xl overflow-hidden shadow-xl border border-muted/20">
                 <iframe
                   src={`https://www.youtube.com/embed/${trailerKey}`}
