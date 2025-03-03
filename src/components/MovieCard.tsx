@@ -44,11 +44,6 @@ export const MovieCard = ({
     e.preventDefault();
     e.stopPropagation();
     
-    // If the movie is already marked as watched, don't do anything
-    if (isWatched) {
-      return;
-    }
-    
     const newWatchedState = !isWatched;
     setIsWatched(newWatchedState);
     
@@ -76,16 +71,11 @@ export const MovieCard = ({
     e.preventDefault();
     e.stopPropagation();
     
-    // If the movie is already in the watchlist, don't do anything
-    if (inWatchlist) {
-      return;
-    }
-    
     const newWatchlistState = !inWatchlist;
     setInWatchlist(newWatchlistState);
     
     try {
-      await toggleWatchlist.mutateAsync({ movie, isInWatchlist: inWatchlist });
+      await toggleWatchlist.mutateAsync({ movie, isInWatchlist: !newWatchlistState });
       toast({
         title: newWatchlistState ? "Added to watchlist" : "Removed from watchlist",
         description: movie.title,

@@ -1,4 +1,3 @@
-
 import { Movie } from "@/types/movie";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useCallback, useEffect } from "react";
@@ -45,7 +44,6 @@ export const useWatchlist = () => {
         } else {
           // Movie already exists, return current watchlist unchanged
           newWatchlist = currentWatchlist;
-          return newWatchlist; // Return early to prevent cache update for existing movie
         }
       }
       

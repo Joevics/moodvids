@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Movie } from "@/types/movie";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -37,14 +36,36 @@ export const useWatchHistory = () => {
     mutationFn: async ({ movie, isWatched }: { movie: Movie, isWatched: boolean }) => {
       const userId = await getOrCreateAnonymousId();
       
-      // Check for existing entry to prevent duplicates in UI
+      // Check if the movie already exists in watch history
       const existingEntry = watchHistory.find(item => item.movie_id === movie.id);
       
-      // If trying to add a movie that's already watched, return early
+      // If trying to mark a movie as watched that's already watched, return early
       if (isWatched && existingEntry && existingEntry.is_watched) {
         return existingEntry;
       }
       
+      // If we're removing from history (isWatched=false) and it doesn't exist, nothing to do
+      if (!isWatched && !existingEntry) {
+        return null;
+      }
+      
+      // If removing from history, delete the record
+      if (!isWatched && existingEntry) {
+        const { error } = await supabase
+          .from('watch_history')
+          .delete()
+          .eq('id', existingEntry.id);
+          
+        if (error) throw error;
+        
+        // Update the cache by removing the item
+        queryClient.setQueryData(['watchHistory'], 
+          watchHistory.filter(item => item.id !== existingEntry.id));
+        
+        return null;
+      }
+      
+      // Otherwise, add or update the record
       const { data, error } = await supabase
         .from('watch_history')
         .upsert({
@@ -54,19 +75,21 @@ export const useWatchHistory = () => {
           poster_path: movie.poster_path,
           is_watched: isWatched,
           watched_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,movie_id'
         })
         .select()
         .single();
 
       if (error) throw error;
       
-      // Update the cache immediately for real-time UI updates
-      // Making sure we replace the existing item with the updated one or add it to the top of the list
+      // Update the cache
+      // If the entry already exists, replace it, otherwise add it to the top
       const updatedHistory = existingEntry
-        ? watchHistory.map(item => item.movie_id === movie.id ? data as WatchHistoryItem : item)
+        ? watchHistory.map(item => item.id === existingEntry.id ? data as WatchHistoryItem : item)
         : [data as WatchHistoryItem, ...watchHistory.filter(item => item.movie_id !== movie.id)];
       
-      queryClient.setQueryData(['watchHistory'], isWatched ? updatedHistory : watchHistory.filter(item => item.movie_id !== movie.id));
+      queryClient.setQueryData(['watchHistory'], updatedHistory);
       
       return data;
     }
