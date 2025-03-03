@@ -40,11 +40,6 @@ export const useWatchHistory = () => {
       // Check for existing entry to prevent duplicates in UI
       const existingEntry = watchHistory.find(item => item.movie_id === movie.id);
       
-      // If trying to add a movie that's already watched, return early
-      if (isWatched && existingEntry && existingEntry.is_watched) {
-        return existingEntry;
-      }
-      
       const { data, error } = await supabase
         .from('watch_history')
         .upsert({
@@ -61,7 +56,7 @@ export const useWatchHistory = () => {
       if (error) throw error;
       
       // Update the cache immediately for real-time UI updates
-      // Making sure we replace the existing item with the updated one or add it to the top of the list
+      // Making sure we replace the existing item with the updated one
       const updatedHistory = existingEntry
         ? watchHistory.map(item => item.movie_id === movie.id ? data as WatchHistoryItem : item)
         : [data as WatchHistoryItem, ...watchHistory.filter(item => item.movie_id !== movie.id)];

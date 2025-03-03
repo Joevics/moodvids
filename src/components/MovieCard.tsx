@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Movie } from "@/types/movie";
@@ -42,13 +43,6 @@ export const MovieCard = ({
 
   const handleWatch = async (e: React.MouseEvent) => {
     e.preventDefault();
-    e.stopPropagation();
-    
-    // If the movie is already marked as watched, don't do anything
-    if (isWatched) {
-      return;
-    }
-    
     const newWatchedState = !isWatched;
     setIsWatched(newWatchedState);
     
@@ -74,13 +68,6 @@ export const MovieCard = ({
 
   const handleWatchlist = async (e: React.MouseEvent) => {
     e.preventDefault();
-    e.stopPropagation();
-    
-    // If the movie is already in the watchlist, don't do anything
-    if (inWatchlist) {
-      return;
-    }
-    
     const newWatchlistState = !inWatchlist;
     setInWatchlist(newWatchlistState);
     
@@ -106,7 +93,6 @@ export const MovieCard = ({
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault();
-    e.stopPropagation();
     if (onDelete) {
       onDelete();
     }
@@ -116,20 +102,22 @@ export const MovieCard = ({
   if (!showFullDetails) {
     return (
       <Card className="overflow-hidden transition-shadow hover:shadow-lg">
-        <div className="relative aspect-[2/3]">
-          {!imageLoaded && (
-            <div className="absolute inset-0 bg-muted animate-pulse" />
-          )}
-          <img
-            src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-            alt={movie.title}
-            className={cn(
-              "object-cover w-full h-full",
-              !imageLoaded && "opacity-0"
+        <Link to={`/movie/${movie.id}`} className="block">
+          <div className="relative aspect-[2/3]">
+            {!imageLoaded && (
+              <div className="absolute inset-0 bg-muted animate-pulse" />
             )}
-            onLoad={() => setImageLoaded(true)}
-          />
-        </div>
+            <img
+              src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+              alt={movie.title}
+              className={cn(
+                "object-cover w-full h-full",
+                !imageLoaded && "opacity-0"
+              )}
+              onLoad={() => setImageLoaded(true)}
+            />
+          </div>
+        </Link>
       </Card>
     );
   }
@@ -137,72 +125,74 @@ export const MovieCard = ({
   // Full details view
   return (
     <Card className="overflow-hidden transition-shadow hover:shadow-lg">
-      <div className="grid grid-cols-[120px,1fr] gap-4 h-[180px]">
-        <div className="relative h-full">
-          {!imageLoaded && (
-            <div className="absolute inset-0 bg-muted animate-pulse" />
-          )}
-          <img
-            src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-            alt={movie.title}
-            className={cn(
-              "object-cover w-full h-full",
-              !imageLoaded && "opacity-0"
+      <Link to={`/movie/${movie.id}`} className="block">
+        <div className="grid grid-cols-[120px,1fr] gap-4 h-[180px]">
+          <div className="relative h-full">
+            {!imageLoaded && (
+              <div className="absolute inset-0 bg-muted animate-pulse" />
             )}
-            onLoad={() => setImageLoaded(true)}
-          />
-        </div>
-        
-        <div className="p-3 flex flex-col justify-between h-full">
-          <div>
-            <div className="flex items-start justify-between gap-2 mb-1">
-              <h3 className="text-base font-semibold line-clamp-2">{movie.title}</h3>
-              {isNew && (
-                <Badge variant="secondary" className="shrink-0">New</Badge>
+            <img
+              src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+              alt={movie.title}
+              className={cn(
+                "object-cover w-full h-full",
+                !imageLoaded && "opacity-0"
               )}
-            </div>
-            
-            <div className="flex items-center mb-2">
-              <Star className="w-4 h-4 text-yellow-400 mr-1" />
-              <span>{movie.vote_average.toFixed(1)}</span>
-            </div>
-            
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              {movie.overview}
-            </p>
+              onLoad={() => setImageLoaded(true)}
+            />
           </div>
           
-          <div className="flex gap-2 mt-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleWatch}
-              disabled={toggleWatch.isPending}
-              className={cn(isWatched && "bg-primary text-primary-foreground")}
-            >
-              <Eye className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleWatchlist}
-              disabled={toggleWatchlist.isPending}
-              className={cn(inWatchlist && "bg-primary text-primary-foreground")}
-            >
-              <Plus className="w-4 h-4" />
-            </Button>
-            {onDelete && (
+          <div className="p-3 flex flex-col justify-between h-full">
+            <div>
+              <div className="flex items-start justify-between gap-2 mb-1">
+                <h3 className="text-base font-semibold line-clamp-2">{movie.title}</h3>
+                {isNew && (
+                  <Badge variant="secondary" className="shrink-0">New</Badge>
+                )}
+              </div>
+              
+              <div className="flex items-center mb-2">
+                <Star className="w-4 h-4 text-yellow-400 mr-1" />
+                <span>{movie.vote_average.toFixed(1)}</span>
+              </div>
+              
+              <p className="text-sm text-muted-foreground line-clamp-2">
+                {movie.overview}
+              </p>
+            </div>
+            
+            <div className="flex gap-2 mt-2">
               <Button
                 variant="outline"
                 size="icon"
-                onClick={handleDelete}
+                onClick={handleWatch}
+                disabled={toggleWatch.isPending}
+                className={cn(isWatched && "bg-primary text-primary-foreground")}
               >
-                <Trash2 className="w-4 h-4" />
+                <Eye className="w-4 h-4" />
               </Button>
-            )}
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleWatchlist}
+                disabled={toggleWatchlist.isPending}
+                className={cn(inWatchlist && "bg-primary text-primary-foreground")}
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+              {onDelete && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleDelete}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      </Link>
     </Card>
   );
 };
