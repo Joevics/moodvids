@@ -29,7 +29,6 @@ const History = () => {
           {watchHistory.map((item) => (
             <Link to={`/movie/${item.movie_id}`} key={item.id} className="block transition-transform hover:scale-105">
               <MovieCard
-                key={item.id}
                 movie={{
                   id: item.movie_id,
                   title: item.movie_title,

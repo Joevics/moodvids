@@ -1,3 +1,4 @@
+
 import { Movie } from "@/types/movie";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useCallback, useEffect } from "react";
@@ -21,7 +22,7 @@ export const useWatchlist = () => {
     }
   }, [queryClient, initialized]);
 
-  const { data: watchlist = [] } = useQuery({
+  const { data: watchlist = [], isLoading } = useQuery({
     queryKey: ['watchlist'],
     queryFn: getStoredWatchlist,
     staleTime: Infinity,
@@ -44,12 +45,13 @@ export const useWatchlist = () => {
         } else {
           // Movie already exists, return current watchlist unchanged
           newWatchlist = currentWatchlist;
+          return newWatchlist; // Return early to prevent cache update for existing movie
         }
       }
       
       localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(newWatchlist));
       
-      // Immediately update the cache for real-time UI updates
+      // Only update the cache if the watchlist actually changed
       queryClient.setQueryData(['watchlist'], newWatchlist);
       
       return newWatchlist;
