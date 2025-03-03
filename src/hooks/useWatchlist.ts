@@ -40,8 +40,8 @@ export const useWatchlist = () => {
         // Check if movie already exists in watchlist to prevent duplicates
         const existingMovie = currentWatchlist.find(item => item.id === movie.id);
         if (!existingMovie) {
-          // Add to watchlist only if it doesn't exist already
-          newWatchlist = [...currentWatchlist, movie];
+          // Add to watchlist at the beginning of the array (newest first)
+          newWatchlist = [movie, ...currentWatchlist];
         } else {
           // Movie already exists, return current watchlist unchanged
           newWatchlist = currentWatchlist;
