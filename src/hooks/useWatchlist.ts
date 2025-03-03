@@ -1,58 +1,93 @@
+
 import { Movie } from "@/types/movie";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useCallback, useEffect } from "react";
-
-const WATCHLIST_STORAGE_KEY = 'moodflix-watchlist';
-
-const getStoredWatchlist = (): Movie[] => {
-  const stored = localStorage.getItem(WATCHLIST_STORAGE_KEY);
-  return stored ? JSON.parse(stored) : [];
-};
+import { supabase } from "@/integrations/supabase/client";
+import { getOrCreateAnonymousId } from "@/lib/anonymousUser";
 
 export const useWatchlist = () => {
   const queryClient = useQueryClient();
   const [initialized, setInitialized] = useState(false);
 
-  // Initialize from localStorage
-  useEffect(() => {
-    if (!initialized) {
-      queryClient.setQueryData(['watchlist'], getStoredWatchlist());
-      setInitialized(true);
-    }
-  }, [queryClient, initialized]);
-
   const { data: watchlist = [], isLoading } = useQuery({
     queryKey: ['watchlist'],
-    queryFn: getStoredWatchlist,
-    staleTime: Infinity,
+    queryFn: async () => {
+      try {
+        const userId = await getOrCreateAnonymousId();
+        
+        const { data, error } = await supabase
+          .from('watchlist')
+          .select('*')
+          .eq('user_id', userId)
+          .order('added_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        // Transform to Movie type for compatibility
+        return data.map(item => ({
+          id: item.movie_id,
+          title: item.movie_title,
+          poster_path: item.poster_path || "",
+          overview: "",
+          release_date: "",
+          vote_average: 0,
+          genres: [],
+        })) as Movie[];
+      } catch (error) {
+        console.error("Error fetching watchlist:", error);
+        return [];
+      }
+    },
+    staleTime: 60000, // 1 minute
   });
+
+  // Initialize watchlist
+  useEffect(() => {
+    if (!initialized) {
+      queryClient.invalidateQueries({ queryKey: ['watchlist'] });
+      setInitialized(true);
+    }
+  }, [initialized, queryClient]);
 
   const toggleWatchlist = useMutation({
     mutationFn: async ({ movie, isInWatchlist }: { movie: Movie; isInWatchlist: boolean }) => {
-      const currentWatchlist = getStoredWatchlist();
-      
-      let newWatchlist;
-      if (isInWatchlist) {
-        // Remove from watchlist
-        newWatchlist = currentWatchlist.filter(item => item.id !== movie.id);
-      } else {
-        // Check if movie already exists in watchlist to prevent duplicates
-        const existingMovie = currentWatchlist.find(item => item.id === movie.id);
-        if (!existingMovie) {
-          // Add to watchlist only if it doesn't exist already
-          newWatchlist = [...currentWatchlist, movie];
+      try {
+        const userId = await getOrCreateAnonymousId();
+        
+        if (isInWatchlist) {
+          // Remove from watchlist
+          const { error } = await supabase
+            .from('watchlist')
+            .delete()
+            .eq('user_id', userId)
+            .eq('movie_id', movie.id);
+            
+          if (error) throw error;
         } else {
-          // Movie already exists, return current watchlist unchanged
-          newWatchlist = currentWatchlist;
+          // Add to watchlist
+          const { error } = await supabase
+            .from('watchlist')
+            .upsert({
+              user_id: userId,
+              movie_id: movie.id,
+              movie_title: movie.title,
+              poster_path: movie.poster_path,
+              added_at: new Date().toISOString()
+            }, {
+              onConflict: 'user_id,movie_id'
+            });
+            
+          if (error) throw error;
         }
+        
+        // Invalidate the watchlist query to refetch the latest data
+        queryClient.invalidateQueries({ queryKey: ['watchlist'] });
+        
+        return watchlist;
+      } catch (error) {
+        console.error("Error toggling watchlist:", error);
+        throw error;
       }
-      
-      localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(newWatchlist));
-      
-      // Only update the cache if the watchlist actually changed
-      queryClient.setQueryData(['watchlist'], newWatchlist);
-      
-      return newWatchlist;
     }
   });
 
@@ -62,7 +97,7 @@ export const useWatchlist = () => {
 
   return {
     watchlist,
-    isLoading: false,
+    isLoading,
     toggleWatchlist,
     isInWatchlist
   };

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Movie } from "@/types/movie";
@@ -31,8 +32,8 @@ export const MovieCard = ({
   const [imageLoaded, setImageLoaded] = useState(false);
   const { toggleWatch, isMovieWatched } = useWatchHistory();
   const { toggleWatchlist, isInWatchlist } = useWatchlist();
-  const [isWatched, setIsWatched] = useState(isMovieWatched(movie.id));
-  const [inWatchlist, setInWatchlist] = useState(isInWatchlist(movie.id));
+  const [isWatched, setIsWatched] = useState(false);
+  const [inWatchlist, setInWatchlist] = useState(false);
   
   // Update state when props change
   useEffect(() => {
