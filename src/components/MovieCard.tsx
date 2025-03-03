@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Movie } from "@/types/movie";
@@ -32,8 +31,8 @@ export const MovieCard = ({
   const [imageLoaded, setImageLoaded] = useState(false);
   const { toggleWatch, isMovieWatched } = useWatchHistory();
   const { toggleWatchlist, isInWatchlist } = useWatchlist();
-  const [isWatched, setIsWatched] = useState(false);
-  const [inWatchlist, setInWatchlist] = useState(false);
+  const [isWatched, setIsWatched] = useState(isMovieWatched(movie.id));
+  const [inWatchlist, setInWatchlist] = useState(isInWatchlist(movie.id));
   
   // Update state when props change
   useEffect(() => {
@@ -44,6 +43,11 @@ export const MovieCard = ({
   const handleWatch = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // If the movie is already marked as watched, don't do anything
+    if (isWatched) {
+      return;
+    }
     
     const newWatchedState = !isWatched;
     setIsWatched(newWatchedState);
@@ -72,11 +76,16 @@ export const MovieCard = ({
     e.preventDefault();
     e.stopPropagation();
     
+    // If the movie is already in the watchlist, don't do anything
+    if (inWatchlist) {
+      return;
+    }
+    
     const newWatchlistState = !inWatchlist;
     setInWatchlist(newWatchlistState);
     
     try {
-      await toggleWatchlist.mutateAsync({ movie, isInWatchlist: !newWatchlistState });
+      await toggleWatchlist.mutateAsync({ movie, isInWatchlist: inWatchlist });
       toast({
         title: newWatchlistState ? "Added to watchlist" : "Removed from watchlist",
         description: movie.title,

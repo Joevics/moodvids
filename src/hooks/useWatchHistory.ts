@@ -21,65 +21,54 @@ export const useWatchHistory = () => {
   const { data: watchHistory = [], isLoading } = useQuery({
     queryKey: ['watchHistory'],
     queryFn: async () => {
-      try {
-        const userId = await getOrCreateAnonymousId();
-        const { data, error } = await supabase
-          .from('watch_history')
-          .select('*')
-          .eq('user_id', userId)
-          .eq('is_watched', true)
-          .order('watched_at', { ascending: false });
+      const userId = await getOrCreateAnonymousId();
+      const { data, error } = await supabase
+        .from('watch_history')
+        .select('*')
+        .eq('user_id', userId)
+        .order('watched_at', { ascending: false });
 
-        if (error) throw error;
-        return data as WatchHistoryItem[] || [];
-      } catch (error) {
-        console.error("Error fetching watch history:", error);
-        return [];
-      }
-    },
-    staleTime: 60000, // 1 minute
+      if (error) throw error;
+      return data as WatchHistoryItem[] || [];
+    }
   });
 
   const toggleWatch = useMutation({
     mutationFn: async ({ movie, isWatched }: { movie: Movie, isWatched: boolean }) => {
-      try {
-        const userId = await getOrCreateAnonymousId();
-        
-        if (!isWatched) {
-          // If removing from watched, delete the record
-          const { error } = await supabase
-            .from('watch_history')
-            .delete()
-            .eq('user_id', userId)
-            .eq('movie_id', movie.id);
-            
-          if (error) throw error;
-        } else {
-          // Add/update watch record
-          const { error } = await supabase
-            .from('watch_history')
-            .upsert({
-              user_id: userId,
-              movie_id: movie.id,
-              movie_title: movie.title,
-              poster_path: movie.poster_path,
-              is_watched: true,
-              watched_at: new Date().toISOString()
-            }, {
-              onConflict: 'user_id,movie_id'
-            });
-            
-          if (error) throw error;
-        }
-        
-        // Invalidate query to refresh data
-        queryClient.invalidateQueries({ queryKey: ['watchHistory'] });
-        
-        return null;
-      } catch (error) {
-        console.error("Error toggling watch status:", error);
-        throw error;
+      const userId = await getOrCreateAnonymousId();
+      
+      // Check for existing entry to prevent duplicates in UI
+      const existingEntry = watchHistory.find(item => item.movie_id === movie.id);
+      
+      // If trying to add a movie that's already watched, return early
+      if (isWatched && existingEntry && existingEntry.is_watched) {
+        return existingEntry;
       }
+      
+      const { data, error } = await supabase
+        .from('watch_history')
+        .upsert({
+          user_id: userId,
+          movie_id: movie.id,
+          movie_title: movie.title,
+          poster_path: movie.poster_path,
+          is_watched: isWatched,
+          watched_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      // Update the cache immediately for real-time UI updates
+      // Making sure we replace the existing item with the updated one or add it to the top of the list
+      const updatedHistory = existingEntry
+        ? watchHistory.map(item => item.movie_id === movie.id ? data as WatchHistoryItem : item)
+        : [data as WatchHistoryItem, ...watchHistory.filter(item => item.movie_id !== movie.id)];
+      
+      queryClient.setQueryData(['watchHistory'], isWatched ? updatedHistory : watchHistory.filter(item => item.movie_id !== movie.id));
+      
+      return data;
     }
   });
 
