@@ -76,14 +76,16 @@ export const MovieCard = ({
     e.preventDefault();
     e.stopPropagation();
     
+    // If the movie is already in the watchlist, don't do anything
+    if (inWatchlist) {
+      return;
+    }
+    
     const newWatchlistState = !inWatchlist;
     setInWatchlist(newWatchlistState);
     
     try {
-      await toggleWatchlist.mutateAsync({ 
-        movie, 
-        isInWatchlist: inWatchlist // This is the correct parameter - we're passing the current state
-      });
+      await toggleWatchlist.mutateAsync({ movie, isInWatchlist: inWatchlist });
       toast({
         title: newWatchlistState ? "Added to watchlist" : "Removed from watchlist",
         description: movie.title,

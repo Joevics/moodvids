@@ -45,7 +45,6 @@ export const useWatchHistory = () => {
         return existingEntry;
       }
       
-      // We use upsert with onConflict to ensure we update rather than insert duplicates
       const { data, error } = await supabase
         .from('watch_history')
         .upsert({
@@ -55,16 +54,11 @@ export const useWatchHistory = () => {
           poster_path: movie.poster_path,
           is_watched: isWatched,
           watched_at: new Date().toISOString()
-        }, {
-          onConflict: 'user_id,movie_id'
         })
         .select()
         .single();
 
-      if (error) {
-        console.error("Error in toggleWatch:", error);
-        throw error;
-      }
+      if (error) throw error;
       
       // Update the cache immediately for real-time UI updates
       // Making sure we replace the existing item with the updated one or add it to the top of the list
