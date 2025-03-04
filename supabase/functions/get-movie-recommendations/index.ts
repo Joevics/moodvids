@@ -3,7 +3,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.0';
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
 const tmdbApiKey = Deno.env.get('TMDB_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL');
 const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -36,7 +36,7 @@ serve(async (req) => {
     console.log('User ID:', userId);
 
     // Check if required environment variables are set
-    if (!openAIApiKey || !tmdbApiKey) {
+    if (!geminiApiKey || !tmdbApiKey) {
       throw new Error('Required API keys are not set');
     }
 
@@ -55,7 +55,7 @@ serve(async (req) => {
     const watchedMovieIds = new Set(watchHistory?.map(h => h.movie_id) || []);
     const recommendedMovieIds = new Set(pastRecommendations?.map(r => r.movie_id) || []);
 
-    // 2. Get movie suggestions from OpenAI
+    // 2. Get movie suggestions from Gemini
     let prompt = "Suggest 50 diverse movies based on the following preferences:\n";
     if (preferences.mood) prompt += `- Mood: ${preferences.mood}\n`;
     if (preferences.genres?.length) prompt += `- Genres: ${preferences.genres.join(', ')}\n`;
@@ -67,42 +67,57 @@ serve(async (req) => {
     
     prompt += "\nProvide only movie titles, one per line. Do not include any additional information or numbering.";
 
-    console.log('Sending prompt to OpenAI:', prompt);
+    console.log('Sending prompt to Gemini:', prompt);
 
-    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Call Gemini API for recommendations
+    const geminiResponse = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
+        'x-goog-api-key': geminiApiKey,
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [
-          { 
-            role: 'system', 
-            content: 'You are a knowledgeable film curator. Provide exactly 50 movie titles that match the given preferences. Return only the titles, one per line, without any numbering or additional information.'
-          },
-          { role: 'user', content: prompt }
+        contents: [
+          {
+            parts: [
+              {
+                text: prompt
+              }
+            ]
+          }
         ],
-        temperature: 0.7,
-        max_tokens: 1000,
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 1000,
+        }
       }),
     });
 
-    if (!openaiResponse.ok) {
-      const errorData = await openaiResponse.text();
-      console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${openaiResponse.status} ${errorData}`);
+    if (!geminiResponse.ok) {
+      const errorData = await geminiResponse.text();
+      console.error('Gemini API error:', errorData);
+      throw new Error(`Gemini API error: ${geminiResponse.status} ${errorData}`);
     }
 
-    const openaiData = await openaiResponse.json();
-    console.log('OpenAI response:', openaiData);
-
-    let movieTitles = openaiData.choices[0].message.content
-      .split('\n')
-      .filter(title => title.trim())
-      .map(title => title.replace(/^\d+\.\s*/, '')) // Remove any numbering
-      .slice(0, 50);
+    const geminiData = await geminiResponse.json();
+    console.log('Gemini response:', geminiData);
+    
+    let movieTitles = [];
+    
+    // Extract movie titles from Gemini response
+    if (geminiData.candidates && geminiData.candidates.length > 0 && 
+        geminiData.candidates[0].content && 
+        geminiData.candidates[0].content.parts && 
+        geminiData.candidates[0].content.parts.length > 0) {
+      
+      const responseText = geminiData.candidates[0].content.parts[0].text;
+      
+      movieTitles = responseText
+        .split('\n')
+        .filter(title => title.trim())
+        .map(title => title.replace(/^\d+\.\s*/, '')) // Remove any numbering
+        .slice(0, 50);
+    }
 
     console.log('Extracted movie titles:', movieTitles);
 
