@@ -15,7 +15,7 @@ const MovieDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toggleWatch, isMovieWatched } = useWatchHistory();
-  const { toggleWatchlist, isInWatchlist } = useWatchlist();
+  const { toggleWatchlist, isInWatchlist, getMovieDetails } = useWatchlist();
   const [isLoading, setIsLoading] = useState(true);
   const [movie, setMovie] = useState<Movie | null>(null);
   const [year, setYear] = useState<string>("");
@@ -26,8 +26,28 @@ const MovieDetails = () => {
     const fetchMovieDetails = async () => {
       try {
         setIsLoading(true);
+        const movieId = Number(id);
+        const localMovie = getMovieDetails ? getMovieDetails(movieId) : undefined;
+        
+        if (localMovie) {
+          setMovie(localMovie);
+          if (localMovie.release_date) {
+            const yearMatch = localMovie.release_date.match(/^\d{4}/);
+            setYear(yearMatch ? yearMatch[0] : "");
+          }
+          
+          if (localMovie.trailer_key) {
+            setTrailerKey(localMovie.trailer_key);
+          } else {
+            await fetchTrailer(movieId);
+          }
+          
+          setIsLoading(false);
+          return;
+        }
+        
         const recommendations = JSON.parse(localStorage.getItem('moodflix-recommendations') || '[]');
-        const foundMovie = recommendations.find((m: Movie) => m.id === Number(id));
+        const foundMovie = recommendations.find((m: Movie) => m.id === movieId);
         
         if (foundMovie) {
           setMovie(foundMovie);
@@ -37,25 +57,10 @@ const MovieDetails = () => {
             setYear(yearMatch ? yearMatch[0] : "");
           }
           
-          if (!foundMovie.trailer_key) {
-            try {
-              const response = await fetch(
-                `https://api.themoviedb.org/3/movie/${id}/videos?api_key=1cf50e6248dc270629e802686245c2c8`
-              );
-              const data = await response.json();
-              const trailer = data.results?.find(
-                (video: any) => 
-                  (video.type === "Trailer" || video.type === "Teaser") && 
-                  video.site === "YouTube"
-              );
-              if (trailer) {
-                setTrailerKey(trailer.key);
-              }
-            } catch (error) {
-              console.error("Failed to fetch trailer:", error);
-            }
-          } else {
+          if (foundMovie.trailer_key) {
             setTrailerKey(foundMovie.trailer_key);
+          } else {
+            await fetchTrailer(movieId);
           }
         } else {
           toast.error('Movie not found');
@@ -68,8 +73,27 @@ const MovieDetails = () => {
       }
     };
 
+    const fetchTrailer = async (movieId: number) => {
+      try {
+        const response = await fetch(
+          `https://api.themoviedb.org/3/movie/${movieId}/videos?api_key=1cf50e6248dc270629e802686245c2c8`
+        );
+        const data = await response.json();
+        const trailer = data.results?.find(
+          (video: any) => 
+            (video.type === "Trailer" || video.type === "Teaser") && 
+            video.site === "YouTube"
+        );
+        if (trailer) {
+          setTrailerKey(trailer.key);
+        }
+      } catch (error) {
+        console.error("Failed to fetch trailer:", error);
+      }
+    };
+
     fetchMovieDetails();
-  }, [id]);
+  }, [id, getMovieDetails]);
 
   const getStreamingLogo = (provider: string) => {
     const logoMap: Record<string, string> = {
@@ -206,10 +230,10 @@ const MovieDetails = () => {
                     variant={isMovieWatched(movie.id) ? "default" : "outline"}
                     onClick={handleWatchToggle}
                     disabled={toggleWatch.isPending}
-                    className="flex-1 justify-center transition-all duration-300"
+                    className="flex-1 justify-center transition-all duration-300 text-xs px-2 py-1 h-8"
+                    size="sm"
                   >
-                    <Eye className="w-4 h-4 mr-2" />
-                    {isMovieWatched(movie.id) ? 'Watched' : 'Mark as watched'}
+                    {isMovieWatched(movie.id) ? 'Watched' : 'Mark watched'}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -225,9 +249,9 @@ const MovieDetails = () => {
                     variant={isInWatchlist(movie.id) ? "default" : "outline"}
                     onClick={handleWatchlistToggle}
                     disabled={toggleWatchlist.isPending}
-                    className="flex-1 justify-center transition-all duration-300"
+                    className="flex-1 justify-center transition-all duration-300 text-xs px-2 py-1 h-8"
+                    size="sm"
                   >
-                    <Plus className="w-4 h-4 mr-2" />
                     {isInWatchlist(movie.id) ? 'In watchlist' : 'Add to watchlist'}
                   </Button>
                 </TooltipTrigger>
