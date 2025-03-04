@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,12 +11,14 @@ import { Movie, StreamingOptions } from "@/types/movie";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { WatchOptions } from "@/components/WatchOptions";
+import { useRecommendations } from "@/hooks/useRecommendations";
 
 const MovieDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toggleWatch, isMovieWatched } = useWatchHistory();
   const { toggleWatchlist, isInWatchlist, getMovieDetails } = useWatchlist();
+  const { removeRecommendation } = useRecommendations();
   const [isLoading, setIsLoading] = useState(true);
   const [movie, setMovie] = useState<Movie | null>(null);
   const [year, setYear] = useState<string>("");
@@ -145,24 +148,54 @@ const MovieDetails = () => {
   }
 
   const handleWatchToggle = async () => {
+    if (!movie) return;
+    
     try {
+      const newWatchedState = !isMovieWatched(movie.id);
+      
       await toggleWatch.mutateAsync({
         movie,
-        isWatched: !isMovieWatched(movie.id)
+        isWatched: newWatchedState
       });
-      toast.success(isMovieWatched(movie.id) ? 'Removed from watched' : 'Added to watched');
+      
+      toast.success(newWatchedState ? 'Added to watched' : 'Removed from watched');
+      
+      // If added to watch history, remove from recommendations
+      if (newWatchedState) {
+        await removeRecommendation.mutateAsync(movie.id);
+      }
+      
+      // Navigate back if the user came from recommendations
+      if (document.referrer.includes('/recommendations')) {
+        navigate('/recommendations');
+      }
     } catch (error) {
       toast.error('Failed to update watch status');
     }
   };
 
   const handleWatchlistToggle = async () => {
+    if (!movie) return;
+    
     try {
+      const newWatchlistState = !isInWatchlist(movie.id);
+      
       await toggleWatchlist.mutateAsync({
         movie,
-        isInWatchlist: !isInWatchlist(movie.id)
+        isInWatchlist: !newWatchlistState
       });
-      toast.success(isInWatchlist(movie.id) ? 'Removed from watchlist' : 'Added to watchlist');
+      
+      toast.success(newWatchlistState ? 'Added to watchlist' : 'Removed from watchlist');
+      
+      // If added to watchlist, remove from recommendations
+      if (newWatchlistState) {
+        await removeRecommendation.mutateAsync(movie.id);
+      }
+      
+      // Navigate back if the user came from recommendations
+      if (document.referrer.includes('/recommendations')) {
+        navigate('/recommendations');
+      }
     } catch (error) {
       toast.error('Failed to update watchlist');
     }
@@ -190,21 +223,21 @@ const MovieDetails = () => {
         <div className="space-y-6">
           <div className="relative aspect-[2/3] rounded-xl overflow-hidden shadow-xl border border-muted/20 transform hover:scale-[1.02] transition-all duration-300">
             <img
-              src={`https://image.tmdb.org/t/p/original${movie.poster_path}`}
-              alt={movie.title}
+              src={`https://image.tmdb.org/t/p/original${movie?.poster_path}`}
+              alt={movie?.title}
               className="object-cover w-full h-full"
             />
             <div className="absolute top-3 right-3 bg-background/80 backdrop-blur-sm p-2 rounded-lg">
               <div className="flex items-center">
                 <Star className="w-5 h-5 text-yellow-400 mr-1" />
-                <span className="font-bold">{movie.vote_average.toFixed(1)}</span>
+                <span className="font-bold">{movie?.vote_average.toFixed(1)}</span>
               </div>
             </div>
           </div>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">{movie.title}</h1>
+              <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">{movie?.title}</h1>
               <div className="flex items-center text-muted-foreground gap-4">
                 {year && (
                   <div className="flex items-center">
@@ -214,12 +247,12 @@ const MovieDetails = () => {
                 )}
                 <div className="flex items-center">
                   <Star className="w-4 h-4 text-yellow-400 mr-2" />
-                  <span className="text-sm">{movie.vote_average.toFixed(1)}</span>
+                  <span className="text-sm">{movie?.vote_average.toFixed(1)}</span>
                 </div>
               </div>
             </div>
 
-            <p className="text-md leading-relaxed text-muted-foreground border-l-4 border-primary/30 pl-4 py-1">{movie.overview}</p>
+            <p className="text-md leading-relaxed text-muted-foreground border-l-4 border-primary/30 pl-4 py-1">{movie?.overview}</p>
           </div>
 
           <div className="flex gap-3">
@@ -227,17 +260,17 @@ const MovieDetails = () => {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    variant={isMovieWatched(movie.id) ? "default" : "outline"}
+                    variant={isMovieWatched(movie?.id || 0) ? "default" : "outline"}
                     onClick={handleWatchToggle}
                     disabled={toggleWatch.isPending}
                     className="flex-1 justify-center transition-all duration-300 text-xs px-2 py-1 h-8"
                     size="sm"
                   >
-                    {isMovieWatched(movie.id) ? 'Watched' : 'Mark watched'}
+                    {isMovieWatched(movie?.id || 0) ? 'Watched' : 'Mark watched'}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>{isMovieWatched(movie.id) ? 'Remove from watched' : 'Add to watched'}</p>
+                  <p>{isMovieWatched(movie?.id || 0) ? 'Remove from watched' : 'Add to watched'}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -246,17 +279,17 @@ const MovieDetails = () => {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    variant={isInWatchlist(movie.id) ? "default" : "outline"}
+                    variant={isInWatchlist(movie?.id || 0) ? "default" : "outline"}
                     onClick={handleWatchlistToggle}
                     disabled={toggleWatchlist.isPending}
                     className="flex-1 justify-center transition-all duration-300 text-xs px-2 py-1 h-8"
                     size="sm"
                   >
-                    {isInWatchlist(movie.id) ? 'In watchlist' : 'Add to watchlist'}
+                    {isInWatchlist(movie?.id || 0) ? 'In watchlist' : 'Add to watchlist'}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>{isInWatchlist(movie.id) ? 'Remove from watchlist' : 'Add to watchlist'}</p>
+                  <p>{isInWatchlist(movie?.id || 0) ? 'Remove from watchlist' : 'Add to watchlist'}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

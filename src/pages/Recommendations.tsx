@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { useWatchHistory } from "@/hooks/useWatchHistory";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { Movie } from "@/types/movie";
+import { toast } from "sonner";
 
 const Recommendations = () => {
   const { data: recommendations = [], isFetching, refetch, removeRecommendation } = useRecommendations();
@@ -19,30 +20,47 @@ const Recommendations = () => {
 
   const handleWatchToggle = async (movie: Movie) => {
     try {
-      await toggleWatch.mutateAsync({ movie, isWatched: true });
-      await removeRecommendation.mutateAsync(movie.id);
+      const isCurrentlyWatched = isMovieWatched(movie.id);
+      await toggleWatch.mutateAsync({ 
+        movie, 
+        isWatched: !isCurrentlyWatched 
+      });
+      
+      if (!isCurrentlyWatched) {
+        await removeRecommendation.mutateAsync(movie.id);
+        toast.success(`${movie.title} marked as watched and removed from recommendations`);
+      }
     } catch (error) {
       console.error('Error toggling watch status:', error);
+      toast.error('Failed to update watch status');
     }
   };
 
   const handleWatchlistToggle = async (movie: Movie) => {
     try {
+      const isCurrentlyInWatchlist = isInWatchlist(movie.id);
       await toggleWatchlist.mutateAsync({
         movie,
-        isInWatchlist: isInWatchlist(movie.id)
+        isInWatchlist: !isCurrentlyInWatchlist
       });
-      await removeRecommendation.mutateAsync(movie.id);
+      
+      if (!isCurrentlyInWatchlist) {
+        await removeRecommendation.mutateAsync(movie.id);
+        toast.success(`${movie.title} added to watchlist and removed from recommendations`);
+      }
     } catch (error) {
       console.error('Error toggling watchlist:', error);
+      toast.error('Failed to update watchlist');
     }
   };
 
   const handleDelete = async (movieId: number) => {
     try {
       await removeRecommendation.mutateAsync(movieId);
+      toast.success('Movie removed from recommendations');
     } catch (error) {
       console.error('Error removing recommendation:', error);
+      toast.error('Failed to remove recommendation');
     }
   };
 

@@ -26,6 +26,7 @@ export const useWatchHistory = () => {
         .from('watch_history')
         .select('*')
         .eq('user_id', userId)
+        .eq('is_watched', true)
         .order('watched_at', { ascending: false });
 
       if (error) throw error;
@@ -37,37 +38,57 @@ export const useWatchHistory = () => {
     mutationFn: async ({ movie, isWatched }: { movie: Movie, isWatched: boolean }) => {
       const userId = await getOrCreateAnonymousId();
       
-      // Check for existing entry
-      const existingEntry = watchHistory.find(item => item.movie_id === movie.id);
+      // Check for existing entry with the same state
+      const existingEntry = watchHistory.find(
+        item => item.movie_id === movie.id && item.is_watched === isWatched
+      );
       
       // If we're trying to set to the same state as what's already in the database, do nothing
-      if (existingEntry && existingEntry.is_watched === isWatched) {
-        return existingEntry;
+      if (existingEntry) {
+        if (isWatched) {
+          return existingEntry;
+        } else {
+          // If removing from watched, delete the entry
+          const { error } = await supabase
+            .from('watch_history')
+            .delete()
+            .eq('id', existingEntry.id);
+          
+          if (error) throw error;
+          
+          // Update the cache immediately
+          const updatedHistory = watchHistory.filter(item => item.id !== existingEntry.id);
+          queryClient.setQueryData(['watchHistory'], updatedHistory);
+          
+          return null;
+        }
       }
       
-      const { data, error } = await supabase
-        .from('watch_history')
-        .upsert({
-          user_id: userId,
-          movie_id: movie.id,
-          movie_title: movie.title,
-          poster_path: movie.poster_path,
-          is_watched: isWatched,
-          watched_at: new Date().toISOString()
-        })
-        .select()
-        .single();
+      // If setting to watched, add a new entry
+      if (isWatched) {
+        const { data, error } = await supabase
+          .from('watch_history')
+          .upsert({
+            user_id: userId,
+            movie_id: movie.id,
+            movie_title: movie.title,
+            poster_path: movie.poster_path,
+            is_watched: true,
+            watched_at: new Date().toISOString()
+          })
+          .select()
+          .single();
 
-      if (error) throw error;
+        if (error) throw error;
+        
+        // Update the cache immediately
+        const updatedHistory = [data as WatchHistoryItem, ...watchHistory.filter(item => item.movie_id !== movie.id)];
+        queryClient.setQueryData(['watchHistory'], updatedHistory);
+        
+        return data;
+      }
       
-      // Update the cache immediately for real-time UI updates
-      const updatedHistory = existingEntry
-        ? watchHistory.map(item => item.movie_id === movie.id ? data as WatchHistoryItem : item)
-        : [data as WatchHistoryItem, ...watchHistory.filter(item => item.movie_id !== movie.id)];
-      
-      queryClient.setQueryData(['watchHistory'], isWatched ? updatedHistory : watchHistory.filter(item => item.movie_id !== movie.id));
-      
-      return data;
+      return null;
     }
   });
 

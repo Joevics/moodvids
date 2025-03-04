@@ -10,6 +10,7 @@ import { useWatchHistory } from "@/hooks/useWatchHistory";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+import { useRecommendations } from "@/hooks/useRecommendations";
 
 interface MovieCardProps {
   movie: Movie;
@@ -32,6 +33,7 @@ export const MovieCard = ({
   const [imageLoaded, setImageLoaded] = useState(false);
   const { toggleWatch, isMovieWatched } = useWatchHistory();
   const { toggleWatchlist, isInWatchlist } = useWatchlist();
+  const { removeRecommendation } = useRecommendations();
   const [isWatched, setIsWatched] = useState(isMovieWatched(movie.id));
   const [inWatchlist, setInWatchlist] = useState(isInWatchlist(movie.id));
   
@@ -43,15 +45,27 @@ export const MovieCard = ({
 
   const handleWatch = async (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    
     const newWatchedState = !isWatched;
     setIsWatched(newWatchedState);
     
     try {
-      await toggleWatch.mutateAsync({ movie, isWatched: newWatchedState });
+      await toggleWatch.mutateAsync({ 
+        movie, 
+        isWatched: newWatchedState 
+      });
+      
       toast({
         title: newWatchedState ? "Added to watched" : "Removed from watched",
         description: movie.title,
       });
+      
+      // If adding to watched, remove from recommendations
+      if (newWatchedState && onDelete) {
+        await removeRecommendation.mutateAsync(movie.id);
+        onDelete();
+      }
       
       if (onWatchToggle) {
         onWatchToggle();
@@ -68,15 +82,27 @@ export const MovieCard = ({
 
   const handleWatchlist = async (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    
     const newWatchlistState = !inWatchlist;
     setInWatchlist(newWatchlistState);
     
     try {
-      await toggleWatchlist.mutateAsync({ movie, isInWatchlist: inWatchlist });
+      await toggleWatchlist.mutateAsync({ 
+        movie, 
+        isInWatchlist: !newWatchlistState 
+      });
+      
       toast({
         title: newWatchlistState ? "Added to watchlist" : "Removed from watchlist",
         description: movie.title,
       });
+      
+      // If adding to watchlist, remove from recommendations
+      if (newWatchlistState && onDelete) {
+        await removeRecommendation.mutateAsync(movie.id);
+        onDelete();
+      }
       
       if (onWatchlistToggle) {
         onWatchlistToggle();
@@ -93,6 +119,8 @@ export const MovieCard = ({
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    
     if (onDelete) {
       onDelete();
     }
