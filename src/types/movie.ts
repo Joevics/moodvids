@@ -45,7 +45,7 @@ export type Genre =
   | "thriller"
   | "documentary";
 
-export type ContentType = "movie" | "tv" | "anime" | "documentary";
+export type ContentType = "movie" | "tv" | "anime" | "documentary" | "cartoon";
 
 export type TimePeriod = "classic" | "90s" | "2000s" | "latest";
 

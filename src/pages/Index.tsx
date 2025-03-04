@@ -9,7 +9,7 @@ import { PersonSelector } from "@/components/PersonSelector";
 import { Movie, Mood, Genre, ContentType, TimePeriod, Language } from "@/types/movie";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useRecommendations } from "@/hooks/useRecommendations";
 import {
   Accordion,
@@ -134,24 +134,28 @@ const Index = () => {
                         </div>
                       </div>
                     </div>
-                    <button 
-                      className="absolute left-0 top-1/2 -translate-y-1/2 bg-background/80 p-2 rounded-full shadow-lg"
-                      onClick={() => {
-                        const element = document.getElementById('advancedSearch');
-                        if (element) element.scrollLeft -= 300;
-                      }}
-                    >
-                      <ArrowLeft className="w-6 h-6" />
-                    </button>
-                    <button 
-                      className="absolute right-0 top-1/2 -translate-y-1/2 bg-background/80 p-2 rounded-full shadow-lg"
-                      onClick={() => {
-                        const element = document.getElementById('advancedSearch');
-                        if (element) element.scrollLeft += 300;
-                      }}
-                    >
-                      <ArrowRight className="w-6 h-6" />
-                    </button>
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center h-full">
+                      <button 
+                        className="bg-secondary/70 hover:bg-secondary/90 p-3 rounded-r-lg shadow-lg transition-colors duration-200"
+                        onClick={() => {
+                          const element = document.getElementById('advancedSearch');
+                          if (element) element.scrollLeft -= 300;
+                        }}
+                      >
+                        <ChevronLeft className="w-5 h-5 text-white" />
+                      </button>
+                    </div>
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center h-full">
+                      <button 
+                        className="bg-secondary/70 hover:bg-secondary/90 p-3 rounded-l-lg shadow-lg transition-colors duration-200"
+                        onClick={() => {
+                          const element = document.getElementById('advancedSearch');
+                          if (element) element.scrollLeft += 300;
+                        }}
+                      >
+                        <ChevronRight className="w-5 h-5 text-white" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </AccordionContent>

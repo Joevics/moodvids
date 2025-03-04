@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { ContentType } from "@/types/movie";
 import { cn } from "@/lib/utils";
-import { Film, Tv, GanttChart, Video } from "lucide-react";
+import { Film, Tv, GanttChart, Video, Smile } from "lucide-react";
 
 interface ContentTypeSelectorProps {
   selectedType?: ContentType;
@@ -14,11 +14,12 @@ const contentTypes: { value: ContentType; icon: React.ElementType; label: string
   { value: "tv", icon: Tv, label: "TV Series" },
   { value: "anime", icon: GanttChart, label: "Anime" },
   { value: "documentary", icon: Video, label: "Documentary" },
+  { value: "cartoon", icon: Smile, label: "Cartoons" },
 ];
 
 export const ContentTypeSelector = ({ selectedType, onSelect }: ContentTypeSelectorProps) => {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full max-w-3xl mx-auto animate-fadeIn">
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 w-full max-w-3xl mx-auto animate-fadeIn">
       {contentTypes.map(({ value, icon: Icon, label }) => (
         <Button
           key={value}
