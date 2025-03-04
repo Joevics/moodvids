@@ -1,13 +1,12 @@
+
 import { useState } from "react";
 import { MoodSelector } from "@/components/MoodSelector";
 import { GenreSelector } from "@/components/GenreSelector";
 import { ContentTypeSelector } from "@/components/ContentTypeSelector";
 import { TimePeriodSelector } from "@/components/TimePeriodSelector";
 import { LanguageSelector } from "@/components/LanguageSelector";
-import { StreamingSelector } from "@/components/StreamingSelector";
 import { PersonSelector } from "@/components/PersonSelector";
-import { MovieCard } from "@/components/MovieCard";
-import { Movie, Mood, Genre, ContentType, TimePeriod, Language, StreamingService } from "@/types/movie";
+import { Movie, Mood, Genre, ContentType, TimePeriod, Language } from "@/types/movie";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
@@ -26,7 +25,6 @@ const Index = () => {
   const [selectedContentType, setSelectedContentType] = useState<ContentType>();
   const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>();
   const [selectedLanguage, setSelectedLanguage] = useState<Language>();
-  const [selectedService, setSelectedService] = useState<StreamingService>();
   const [selectedPeople, setSelectedPeople] = useState<string[]>([]);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -37,7 +35,6 @@ const Index = () => {
     contentType: selectedContentType,
     timePeriod: selectedTimePeriod,
     languages: selectedLanguage ? [selectedLanguage] : undefined,
-    streamingServices: selectedService ? [selectedService] : undefined,
     selectedPeople,
   });
 
@@ -55,10 +52,6 @@ const Index = () => {
 
   const handleLanguageSelect = (language: Language) => {
     setSelectedLanguage(language);
-  };
-
-  const handleServiceSelect = (service: StreamingService) => {
-    setSelectedService(service);
   };
 
   const handleAddPerson = (person: string) => {
@@ -134,10 +127,6 @@ const Index = () => {
                         <div className="w-72">
                           <h3 className="text-lg font-medium mb-4 text-center">Language</h3>
                           <LanguageSelector selectedLanguages={selectedLanguage ? [selectedLanguage] : []} onSelect={handleLanguageSelect} />
-                        </div>
-                        <div className="w-72">
-                          <h3 className="text-lg font-medium mb-4 text-center">Streaming Services</h3>
-                          <StreamingSelector selectedServices={selectedService ? [selectedService] : []} onSelect={handleServiceSelect} />
                         </div>
                         <div className="w-72">
                           <h3 className="text-lg font-medium mb-4 text-center">Cast & Crew</h3>

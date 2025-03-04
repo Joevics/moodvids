@@ -57,14 +57,6 @@ export type Language =
   | "japanese"
   | "chinese";
 
-export type StreamingService = 
-  | "netflix"
-  | "disney"
-  | "prime"
-  | "hulu"
-  | "hbo"
-  | "apple";
-
 export interface UserPreferences {
   mood?: Mood;
   genres?: Genre[];

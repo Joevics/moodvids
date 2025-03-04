@@ -61,11 +61,21 @@ serve(async (req) => {
     if (preferences.genres?.length) prompt += `- Genres: ${preferences.genres.join(', ')}\n`;
     if (preferences.contentType) prompt += `- Content Type: ${preferences.contentType}\n`;
     if (preferences.timePeriod) prompt += `- Time Period: ${preferences.timePeriod}\n`;
-    if (preferences.languages?.length) prompt += `- Languages: ${preferences.languages.join(', ')}\n`;
-    if (preferences.streamingServices?.length) prompt += `- Streaming Services: ${preferences.streamingServices.join(', ')}\n`;
-    if (preferences.selectedPeople?.length) prompt += `- Cast/Crew: ${preferences.selectedPeople.join(', ')}\n`;
+    
+    // Add language preference, default to English if not specified
+    if (preferences.languages?.length) {
+      prompt += `- Languages: ${preferences.languages.join(', ')}\n`;
+    } else {
+      prompt += `- Languages: English\n`;
+    }
+    
+    // Add cast/crew if specified
+    if (preferences.selectedPeople?.length) {
+      prompt += `- Cast/Crew: ${preferences.selectedPeople.join(', ')}\n`;
+    }
     
     prompt += "\nProvide only movie titles, one per line. Do not include any additional information or numbering.";
+    prompt += "\nFocus particularly on movies that match ALL of the specified criteria together, not just one aspect.";
 
     console.log('Sending prompt to Gemini:', prompt);
 

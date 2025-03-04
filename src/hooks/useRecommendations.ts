@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Movie, Mood, Genre, ContentType, TimePeriod, Language, StreamingService } from "@/types/movie";
+import { Movie, Mood, Genre, ContentType, TimePeriod, Language } from "@/types/movie";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getOrCreateAnonymousId } from "@/lib/anonymousUser";
 
@@ -10,7 +10,6 @@ interface MoviePreferences {
   contentType?: ContentType;
   timePeriod?: TimePeriod;
   languages?: Language[];
-  streamingServices?: StreamingService[];
   selectedPeople?: string[];
 }
 
