@@ -1,8 +1,10 @@
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { StreamingService } from "@/types/movie";
 import { Film, PlayCircle } from "lucide-react";
+
+// Define StreamingService type locally since it's not exported from movie.ts anymore
+type StreamingService = "netflix" | "disney" | "prime" | "hulu" | "hbo" | "apple";
 
 interface StreamingSelectorProps {
   selectedServices: StreamingService[];
