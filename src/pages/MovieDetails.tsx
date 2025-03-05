@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -202,9 +201,9 @@ const MovieDetails = () => {
   };
 
   const movieSites = [
-    { name: "FZMovies", site: "fzmovies.net", description: "Popular for direct downloads" },
-    { name: "9XMovies", site: "9xmovies.com", description: "Large collection of movies and series" },
-    { name: "Nkiri", site: "nkiri.com", description: "Nigerian and international content" },
+    { name: "Archive.org", site: "archive.org", description: "Free digital library with films and videos" },
+    { name: "Tubi TV", site: "tubitv.com", description: "Free streaming with ads" },
+    { name: "Netflix", site: "netflix.com", description: "Popular subscription streaming service" },
     { name: "FMovies", site: "fmovies.co", description: "Streaming site with minimal ads" }
   ];
 
