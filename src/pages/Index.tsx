@@ -116,6 +116,13 @@ const Index = () => {
         </div>
 
         <section className="space-y-12">
+          {/* Mood selector moved before advanced options */}
+          <div className="text-center space-y-4">
+            <h2 className="text-2xl font-semibold">How are you feeling today?</h2>
+            <MoodSelector selectedMood={selectedMood} onSelect={setSelectedMood} />
+          </div>
+
+          {/* Advanced Search moved below mood selector */}
           <Accordion 
             type="single" 
             collapsible 
@@ -130,7 +137,7 @@ const Index = () => {
               <AccordionContent className="pt-6">
                 <div className="space-y-8">
                   <div className="relative">
-                    <div className="overflow-x-auto pb-4 scroll-smooth" id="advancedSearch">
+                    <div className="overflow-x-auto pb-4 scroll-smooth scrollbar-none" id="advancedSearch" style={{ scrollBehavior: 'smooth' }}>
                       <div className="flex space-x-8 min-w-max px-4">
                         <div className="w-72">
                           <h3 className="text-lg font-medium mb-4 text-center">Genres</h3>
@@ -154,23 +161,24 @@ const Index = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center h-full">
+                    {/* Arrow buttons positioned farther outside */}
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 -left-4 md:-left-8 flex items-center h-full">
                       <button 
                         className="bg-secondary/70 hover:bg-secondary/90 p-3 rounded-r-lg shadow-lg transition-colors duration-200"
                         onClick={() => {
                           const element = document.getElementById('advancedSearch');
-                          if (element) element.scrollLeft -= 300;
+                          if (element) element.scrollLeft -= 350;
                         }}
                       >
                         <ChevronLeft className="w-5 h-5 text-white" />
                       </button>
                     </div>
-                    <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center h-full">
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 -right-4 md:-right-8 flex items-center h-full">
                       <button 
                         className="bg-secondary/70 hover:bg-secondary/90 p-3 rounded-l-lg shadow-lg transition-colors duration-200"
                         onClick={() => {
                           const element = document.getElementById('advancedSearch');
-                          if (element) element.scrollLeft += 300;
+                          if (element) element.scrollLeft += 350;
                         }}
                       >
                         <ChevronRight className="w-5 h-5 text-white" />
@@ -193,11 +201,6 @@ const Index = () => {
               </ul>
             </div>
           )}
-
-          <div className="text-center space-y-4">
-            <h2 className="text-2xl font-semibold">How are you feeling today?</h2>
-            <MoodSelector selectedMood={selectedMood} onSelect={setSelectedMood} />
-          </div>
 
           <div className="text-center">
             <Button 
