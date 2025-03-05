@@ -12,6 +12,7 @@ import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { useRecommendations } from "@/hooks/useRecommendations";
 import { toast } from "sonner";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface MovieCardProps {
   movie: Movie;
@@ -44,85 +45,6 @@ export const MovieCard = ({
     setInWatchlist(isInWatchlist(movie.id));
   }, [movie.id, isMovieWatched, isInWatchlist]);
 
-  const handleWatch = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    try {
-      const newWatchedState = !isMovieWatched(movie.id);
-      
-      await toggleWatch.mutateAsync({
-        movie,
-        isWatched: newWatchedState
-      });
-      
-      toast({
-        title: newWatchedState ? 'Added to watched' : 'Removed from watched',
-        description: movie.title,
-      });
-      
-      // If added to watch history, remove from recommendations
-      if (newWatchedState && onDelete) {
-        await removeRecommendation.mutateAsync(movie.id);
-        onDelete();
-      }
-      
-      if (onWatchToggle) {
-        onWatchToggle();
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update watch status",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleWatchlist = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    try {
-      const newWatchlistState = !isInWatchlist(movie.id);
-      
-      await toggleWatchlist.mutateAsync({
-        movie,
-        isInWatchlist: !newWatchlistState
-      });
-      
-      toast({
-        title: newWatchlistState ? 'Added to watchlist' : 'Removed from watchlist',
-        description: movie.title,
-      });
-      
-      // If added to watchlist, remove from recommendations
-      if (newWatchlistState && onDelete) {
-        await removeRecommendation.mutateAsync(movie.id);
-        onDelete();
-      }
-      
-      if (onWatchlistToggle) {
-        onWatchlistToggle();
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update watchlist",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDelete = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (onDelete) {
-      onDelete();
-    }
-  };
-
   // Simple poster-only view
   if (!showFullDetails) {
     return (
@@ -146,6 +68,73 @@ export const MovieCard = ({
       </Card>
     );
   }
+
+  // Copied from MovieDetails.tsx - Handle Watch Toggle function
+  const handleWatchToggle = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    try {
+      const newWatchedState = !isMovieWatched(movie.id);
+      
+      await toggleWatch.mutateAsync({
+        movie,
+        isWatched: newWatchedState
+      });
+      
+      toast.success(newWatchedState ? 'Added to watched' : 'Removed from watched');
+      
+      // If added to watch history, remove from recommendations
+      if (newWatchedState && onDelete) {
+        await removeRecommendation.mutateAsync(movie.id);
+        onDelete();
+      }
+      
+      if (onWatchToggle) {
+        onWatchToggle();
+      }
+    } catch (error) {
+      toast.error('Failed to update watch status');
+    }
+  };
+
+  // Copied from MovieDetails.tsx - Handle Watchlist Toggle function
+  const handleWatchlistToggle = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    try {
+      const newWatchlistState = !isInWatchlist(movie.id);
+      
+      await toggleWatchlist.mutateAsync({
+        movie,
+        isInWatchlist: !newWatchlistState
+      });
+      
+      toast.success(newWatchlistState ? 'Added to watchlist' : 'Removed from watchlist');
+      
+      // If added to watchlist, remove from recommendations
+      if (newWatchlistState && onDelete) {
+        await removeRecommendation.mutateAsync(movie.id);
+        onDelete();
+      }
+      
+      if (onWatchlistToggle) {
+        onWatchlistToggle();
+      }
+    } catch (error) {
+      toast.error('Failed to update watchlist');
+    }
+  };
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (onDelete) {
+      onDelete();
+    }
+  };
 
   // Full details view
   return (
@@ -187,24 +176,45 @@ export const MovieCard = ({
             </div>
             
             <div className="flex gap-2 mt-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleWatch}
-                disabled={toggleWatch.isPending}
-                className={cn(isWatched && "bg-primary text-primary-foreground")}
-              >
-                <Eye className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleWatchlist}
-                disabled={toggleWatchlist.isPending}
-                className={cn(inWatchlist && "bg-primary text-primary-foreground")}
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
+              {/* Replaced buttons with the exact implementation from MovieDetails.tsx */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={isMovieWatched(movie.id) ? "default" : "outline"}
+                      onClick={handleWatchToggle}
+                      disabled={toggleWatch.isPending}
+                      className="flex-1 justify-center transition-all duration-300 text-xs px-2 py-1 h-8"
+                      size="sm"
+                    >
+                      {isMovieWatched(movie.id) ? 'Watched' : 'Mark watched'}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{isMovieWatched(movie.id) ? 'Remove from watched' : 'Add to watched'}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={isInWatchlist(movie.id) ? "default" : "outline"}
+                      onClick={handleWatchlistToggle}
+                      disabled={toggleWatchlist.isPending}
+                      className="flex-1 justify-center transition-all duration-300 text-xs px-2 py-1 h-8"
+                      size="sm"
+                    >
+                      {isInWatchlist(movie.id) ? 'In watchlist' : 'Add to watchlist'}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{isInWatchlist(movie.id) ? 'Remove from watchlist' : 'Add to watchlist'}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              
               {onDelete && (
                 <Button
                   variant="outline"
