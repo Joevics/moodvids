@@ -11,6 +11,7 @@ import { useWatchlist } from "@/hooks/useWatchlist";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { useRecommendations } from "@/hooks/useRecommendations";
+import { toast } from "sonner";
 
 interface MovieCardProps {
   movie: Movie;
@@ -47,21 +48,20 @@ export const MovieCard = ({
     e.preventDefault();
     e.stopPropagation();
     
-    const newWatchedState = !isWatched;
-    setIsWatched(newWatchedState);
-    
     try {
-      await toggleWatch.mutateAsync({ 
-        movie, 
-        isWatched: newWatchedState 
+      const newWatchedState = !isMovieWatched(movie.id);
+      
+      await toggleWatch.mutateAsync({
+        movie,
+        isWatched: newWatchedState
       });
       
       toast({
-        title: newWatchedState ? "Added to watched" : "Removed from watched",
+        title: newWatchedState ? 'Added to watched' : 'Removed from watched',
         description: movie.title,
       });
       
-      // If adding to watched, remove from recommendations
+      // If added to watch history, remove from recommendations
       if (newWatchedState && onDelete) {
         await removeRecommendation.mutateAsync(movie.id);
         onDelete();
@@ -71,7 +71,6 @@ export const MovieCard = ({
         onWatchToggle();
       }
     } catch (error) {
-      setIsWatched(!newWatchedState);
       toast({
         title: "Error",
         description: "Failed to update watch status",
@@ -84,21 +83,20 @@ export const MovieCard = ({
     e.preventDefault();
     e.stopPropagation();
     
-    const newWatchlistState = !inWatchlist;
-    setInWatchlist(newWatchlistState);
-    
     try {
-      await toggleWatchlist.mutateAsync({ 
-        movie, 
-        isInWatchlist: !newWatchlistState 
+      const newWatchlistState = !isInWatchlist(movie.id);
+      
+      await toggleWatchlist.mutateAsync({
+        movie,
+        isInWatchlist: !newWatchlistState
       });
       
       toast({
-        title: newWatchlistState ? "Added to watchlist" : "Removed from watchlist",
+        title: newWatchlistState ? 'Added to watchlist' : 'Removed from watchlist',
         description: movie.title,
       });
       
-      // If adding to watchlist, remove from recommendations
+      // If added to watchlist, remove from recommendations
       if (newWatchlistState && onDelete) {
         await removeRecommendation.mutateAsync(movie.id);
         onDelete();
@@ -108,7 +106,6 @@ export const MovieCard = ({
         onWatchlistToggle();
       }
     } catch (error) {
-      setInWatchlist(!newWatchlistState);
       toast({
         title: "Error",
         description: "Failed to update watchlist",

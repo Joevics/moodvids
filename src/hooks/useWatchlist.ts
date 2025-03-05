@@ -8,7 +8,18 @@ const MOVIE_DETAILS_STORAGE_KEY = 'moodflix-movie-details';
 
 const getStoredWatchlist = (): Movie[] => {
   const stored = localStorage.getItem(WATCHLIST_STORAGE_KEY);
-  return stored ? JSON.parse(stored) : [];
+  // Sort by most recent first if data exists
+  if (stored) {
+    const watchlist = JSON.parse(stored);
+    return watchlist.sort((a: Movie, b: Movie) => {
+      // If added_at exists, use it for sorting
+      if (a.added_at && b.added_at) {
+        return new Date(b.added_at).getTime() - new Date(a.added_at).getTime();
+      }
+      return 0;
+    });
+  }
+  return [];
 };
 
 const getStoredMovieDetails = (): Record<number, Movie> => {
@@ -56,7 +67,12 @@ export const useWatchlist = () => {
         const existingMovie = currentWatchlist.find(item => item.id === movie.id);
         if (!existingMovie) {
           // Add to watchlist only if it doesn't exist already
-          newWatchlist = [...currentWatchlist, movie];
+          // Add timestamp for sorting
+          const movieWithTimestamp = {
+            ...movie,
+            added_at: new Date().toISOString()
+          };
+          newWatchlist = [movieWithTimestamp, ...currentWatchlist];
         } else {
           // Movie already exists, return current watchlist unchanged
           newWatchlist = currentWatchlist;
