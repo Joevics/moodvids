@@ -1,4 +1,3 @@
-
 export interface Movie {
   id: number;
   title: string;
@@ -10,6 +9,8 @@ export interface Movie {
   providers?: string[];
   trailer_key?: string;
   streaming_options?: StreamingOptions;
+  added_at?: string;
+  generated_at?: string;
 }
 
 export interface StreamingOptions {
