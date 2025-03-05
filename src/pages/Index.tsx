@@ -26,6 +26,7 @@ const Index = () => {
   const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>();
   const [selectedLanguage, setSelectedLanguage] = useState<Language>();
   const [selectedPeople, setSelectedPeople] = useState<string[]>([]);
+  const [advancedOptionsOpen, setAdvancedOptionsOpen] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -64,11 +65,29 @@ const Index = () => {
     setSelectedPeople((prev) => prev.filter((p) => p !== person));
   };
 
+  const handleAccordionChange = (value: string) => {
+    setAdvancedOptionsOpen(value === "advanced");
+  };
+
+  // Get summary of selected advanced options
+  const getSelectedOptionsText = () => {
+    const options = [];
+    if (selectedGenre) options.push(`Genre: ${selectedGenre}`);
+    if (selectedContentType) options.push(`Content Type: ${selectedContentType}`);
+    if (selectedTimePeriod) options.push(`Time Period: ${selectedTimePeriod}`);
+    if (selectedLanguage) options.push(`Language: ${selectedLanguage}`);
+    if (selectedPeople.length) options.push(`Cast/Crew: ${selectedPeople.join(', ')}`);
+    
+    return options;
+  };
+
+  const selectedOptions = getSelectedOptionsText();
+
   const handleGetRecommendations = () => {
-    if (!selectedMood) {
+    if (!selectedMood && !selectedOptions.length) {
       toast({
-        title: "Please select a mood",
-        description: "We need to know how you're feeling to give you the best recommendations.",
+        title: "Please select preferences",
+        description: "Select either a mood or advanced search options to get recommendations.",
         variant: "destructive",
       });
       return;
@@ -97,17 +116,18 @@ const Index = () => {
         </div>
 
         <section className="space-y-12">
-          <div className="text-center space-y-4">
-            <h2 className="text-2xl font-semibold">How are you feeling today?</h2>
-            <MoodSelector selectedMood={selectedMood} onSelect={setSelectedMood} />
-          </div>
-
-          <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="advanced">
-              <AccordionTrigger className="text-xl font-medium text-center justify-center">
+          <Accordion 
+            type="single" 
+            collapsible 
+            className="w-full mb-8" 
+            defaultValue={advancedOptionsOpen ? "advanced" : undefined}
+            onValueChange={handleAccordionChange}
+          >
+            <AccordionItem value="advanced" className="border-none">
+              <AccordionTrigger className="text-xl font-medium text-center justify-center py-4 px-6 bg-secondary/20 rounded-lg hover:bg-secondary/30 transition-all">
                 Advanced Search Options
               </AccordionTrigger>
-              <AccordionContent>
+              <AccordionContent className="pt-6">
                 <div className="space-y-8">
                   <div className="relative">
                     <div className="overflow-x-auto pb-4 scroll-smooth" id="advancedSearch">
@@ -161,6 +181,23 @@ const Index = () => {
               </AccordionContent>
             </AccordionItem>
           </Accordion>
+
+          {/* Display selected advanced options */}
+          {selectedOptions.length > 0 && (
+            <div className="bg-secondary/10 p-4 rounded-lg animate-fadeIn">
+              <h3 className="text-lg font-medium mb-2">Selected Options:</h3>
+              <ul className="list-disc pl-5 space-y-1">
+                {selectedOptions.map((option, index) => (
+                  <li key={index}>{option}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div className="text-center space-y-4">
+            <h2 className="text-2xl font-semibold">How are you feeling today?</h2>
+            <MoodSelector selectedMood={selectedMood} onSelect={setSelectedMood} />
+          </div>
 
           <div className="text-center">
             <Button 

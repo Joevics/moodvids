@@ -57,25 +57,53 @@ serve(async (req) => {
 
     // 2. Get movie suggestions from Gemini
     let prompt = "Suggest 50 diverse movies based on the following preferences:\n";
-    if (preferences.mood) prompt += `- Mood: ${preferences.mood}\n`;
-    if (preferences.genres?.length) prompt += `- Genres: ${preferences.genres.join(', ')}\n`;
-    if (preferences.contentType) prompt += `- Content Type: ${preferences.contentType}\n`;
-    if (preferences.timePeriod) prompt += `- Time Period: ${preferences.timePeriod}\n`;
     
-    // Add language preference, default to English if not specified
-    if (preferences.languages?.length) {
-      prompt += `- Languages: ${preferences.languages.join(', ')}\n`;
-    } else {
-      prompt += `- Languages: English\n`;
+    // First add advanced search options if any
+    const hasAdvancedOptions = preferences.genres?.length || preferences.contentType || 
+                               preferences.timePeriod || preferences.languages?.length || 
+                               preferences.selectedPeople?.length;
+    
+    if (hasAdvancedOptions) {
+      prompt += "== PRIORITY CRITERIA ==\n";
+      if (preferences.genres?.length) prompt += `- Genres: ${preferences.genres.join(', ')}\n`;
+      if (preferences.contentType) prompt += `- Content Type: ${preferences.contentType}\n`;
+      if (preferences.timePeriod) prompt += `- Time Period: ${preferences.timePeriod}\n`;
+      if (preferences.languages?.length) {
+        prompt += `- Languages: ${preferences.languages.join(', ')}\n`;
+      }
+      if (preferences.selectedPeople?.length) {
+        prompt += `- Cast/Crew: ${preferences.selectedPeople.join(', ')}\n`;
+      }
+      prompt += "\n";
+    }
+
+    // Add mood if specified
+    if (preferences.mood) {
+      if (hasAdvancedOptions) {
+        prompt += "== SECONDARY CRITERIA ==\n";
+      }
+      prompt += `- Mood: ${preferences.mood}\n\n`;
     }
     
-    // Add cast/crew if specified
-    if (preferences.selectedPeople?.length) {
-      prompt += `- Cast/Crew: ${preferences.selectedPeople.join(', ')}\n`;
+    // If no preferences specified, ask for a random diverse selection
+    if (!hasAdvancedOptions && !preferences.mood) {
+      prompt += "== DIVERSITY CRITERIA ==\n";
+      prompt += "- Include movies from different decades (1950s to present)\n";
+      prompt += "- Include different genres\n";
+      prompt += "- Include movies with different ratings (mostly above 5/10)\n";
+      prompt += "- Include movies with different directors and actors\n";
+      prompt += "- Include some foreign language films\n";
+      prompt += "- Include both well-known classics and hidden gems\n\n";
+    }
+    
+    // Add language preference if not already specified
+    if (!preferences.languages?.length) {
+      prompt += `- Languages: Include a mix, but primarily English\n`;
     }
     
     prompt += "\nProvide only movie titles, one per line. Do not include any additional information or numbering.";
     prompt += "\nFocus particularly on movies that match ALL of the specified criteria together, not just one aspect.";
+    prompt += "\nEnsure great diversity in your recommendations.";
 
     console.log('Sending prompt to Gemini:', prompt);
 
