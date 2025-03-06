@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Movie } from "@/types/movie";
@@ -13,8 +14,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 interface MovieCardProps {
   movie: Movie;
-  onWatchToggle?: () => void;
-  onWatchlistToggle?: () => void;
   onDelete?: () => void;
   isNew?: boolean;
   showFullDetails?: boolean;
@@ -30,52 +29,7 @@ export const MovieCard = ({
   const { toggleWatch, isMovieWatched } = useWatchHistory();
   const { toggleWatchlist, isInWatchlist } = useWatchlist();
   const { removeRecommendation } = useRecommendations();
-  const [isWatched, setIsWatched] = useState(isMovieWatched(movie.id));
-  const [inWatchlist, setInWatchlist] = useState(isInWatchlist(movie.id));
   
-  // Update state when props change
-  useEffect(() => {
-    setIsWatched(isMovieWatched(movie.id));
-    setInWatchlist(isInWatchlist(movie.id));
-  }, [movie.id, isMovieWatched, isInWatchlist]);
-
-  const handleWatchToggle = async () => {
-    if (!movie) return;
-    
-    const newWatchedState = !isMovieWatched(movie.id);
-    await toggleWatch.mutateAsync({
-      movie,
-      isWatched: newWatchedState
-    });
-    
-    if (newWatchedState && onDelete) {
-      await removeRecommendation.mutateAsync(movie.id);
-    }
-  };
-
-  const handleWatchlistToggle = async () => {
-    if (!movie) return;
-    
-    const newWatchlistState = !isInWatchlist(movie.id);
-    await toggleWatchlist.mutateAsync({
-      movie,
-      isInWatchlist: !newWatchlistState
-    });
-    
-    if (newWatchlistState && onDelete) {
-      await removeRecommendation.mutateAsync(movie.id);
-    }
-  };
-
-  const handleDelete = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (onDelete) {
-      onDelete();
-    }
-  };
-
   // Simple poster-only view
   if (!showFullDetails) {
     return (
@@ -99,6 +53,15 @@ export const MovieCard = ({
       </Card>
     );
   }
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (onDelete) {
+      onDelete();
+    }
+  };
 
   // Full details view
   return (
@@ -148,7 +111,16 @@ export const MovieCard = ({
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        handleWatchToggle();
+                        const newWatchedState = !isMovieWatched(movie.id);
+                        toggleWatch.mutateAsync({
+                          movie,
+                          isWatched: newWatchedState
+                        });
+                        
+                        // If added to watch history, remove from recommendations
+                        if (newWatchedState && onDelete) {
+                          removeRecommendation.mutateAsync(movie.id);
+                        }
                       }}
                       disabled={toggleWatch.isPending}
                       className="flex-1 justify-center transition-all duration-300 text-xs px-2 py-1 h-8"
@@ -172,7 +144,16 @@ export const MovieCard = ({
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        handleWatchlistToggle();
+                        const newWatchlistState = !isInWatchlist(movie.id);
+                        toggleWatchlist.mutateAsync({
+                          movie,
+                          isInWatchlist: !newWatchlistState
+                        });
+                        
+                        // If added to watchlist, remove from recommendations
+                        if (newWatchlistState && onDelete) {
+                          removeRecommendation.mutateAsync(movie.id);
+                        }
                       }}
                       disabled={toggleWatchlist.isPending}
                       className="flex-1 justify-center transition-all duration-300 text-xs px-2 py-1 h-8"
