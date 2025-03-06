@@ -5,13 +5,12 @@ import { Movie } from "@/types/movie";
 import { Eye, Plus, Trash2, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
 import { useWatchHistory } from "@/hooks/useWatchHistory";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { useRecommendations } from "@/hooks/useRecommendations";
-import { toast } from "sonner";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface MovieCardProps {
   movie: Movie;
@@ -30,7 +29,6 @@ export const MovieCard = ({
   isNew,
   showFullDetails = true
 }: MovieCardProps) => {
-  const { toast } = useToast();
   const [imageLoaded, setImageLoaded] = useState(false);
   const { toggleWatch, isMovieWatched } = useWatchHistory();
   const { toggleWatchlist, isInWatchlist } = useWatchlist();
@@ -44,9 +42,8 @@ export const MovieCard = ({
     setInWatchlist(isInWatchlist(movie.id));
   }, [movie.id, isMovieWatched, isInWatchlist]);
 
-  const handleWatch = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleWatchToggle = async () => {
+    if (!movie) return;
     
     try {
       const newWatchedState = !isMovieWatched(movie.id);
@@ -56,32 +53,21 @@ export const MovieCard = ({
         isWatched: newWatchedState
       });
       
-      toast({
-        title: newWatchedState ? 'Added to watched' : 'Removed from watched',
-        description: movie.title,
-      });
-      
       // If added to watch history, remove from recommendations
       if (newWatchedState && onDelete) {
         await removeRecommendation.mutateAsync(movie.id);
-        onDelete();
       }
       
       if (onWatchToggle) {
         onWatchToggle();
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update watch status",
-        variant: "destructive",
-      });
+      console.error("Failed to update watch status:", error);
     }
   };
 
-  const handleWatchlist = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleWatchlistToggle = async () => {
+    if (!movie) return;
     
     try {
       const newWatchlistState = !isInWatchlist(movie.id);
@@ -91,26 +77,16 @@ export const MovieCard = ({
         isInWatchlist: !newWatchlistState
       });
       
-      toast({
-        title: newWatchlistState ? 'Added to watchlist' : 'Removed from watchlist',
-        description: movie.title,
-      });
-      
       // If added to watchlist, remove from recommendations
       if (newWatchlistState && onDelete) {
         await removeRecommendation.mutateAsync(movie.id);
-        onDelete();
       }
       
       if (onWatchlistToggle) {
         onWatchlistToggle();
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update watchlist",
-        variant: "destructive",
-      });
+      console.error("Failed to update watchlist:", error);
     }
   };
 
@@ -186,30 +162,59 @@ export const MovieCard = ({
               </p>
             </div>
             
-            <div className="flex gap-2 mt-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleWatch}
-                disabled={toggleWatch.isPending}
-                className={cn(isWatched && "bg-primary text-primary-foreground")}
-              >
-                <Eye className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleWatchlist}
-                disabled={toggleWatchlist.isPending}
-                className={cn(inWatchlist && "bg-primary text-primary-foreground")}
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
+            <div className="flex gap-3 mt-2">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={isMovieWatched(movie.id) ? "default" : "outline"}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleWatchToggle();
+                      }}
+                      disabled={toggleWatch.isPending}
+                      className="flex-1 justify-center transition-all duration-300 text-xs px-2 py-1 h-8"
+                      size="sm"
+                    >
+                      {isMovieWatched(movie.id) ? 'Watched' : 'Mark watched'}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{isMovieWatched(movie.id) ? 'Remove from watched' : 'Add to watched'}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={isInWatchlist(movie.id) ? "default" : "outline"}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleWatchlistToggle();
+                      }}
+                      disabled={toggleWatchlist.isPending}
+                      className="flex-1 justify-center transition-all duration-300 text-xs px-2 py-1 h-8"
+                      size="sm"
+                    >
+                      {isInWatchlist(movie.id) ? 'In watchlist' : 'Add to watchlist'}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{isInWatchlist(movie.id) ? 'Remove from watchlist' : 'Add to watchlist'}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              
               {onDelete && (
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={handleDelete}
+                  className="h-8 w-8"
                 >
                   <Trash2 className="w-4 h-4" />
                 </Button>
