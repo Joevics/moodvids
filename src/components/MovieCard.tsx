@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Movie } from "@/types/movie";
@@ -123,11 +122,10 @@ export const MovieCard = ({
                         }
                       }}
                       disabled={toggleWatch.isPending}
-                      className="flex-1 justify-center transition-all duration-300 text-xs px-2 py-1 h-8"
+                      className="flex-1 justify-center transition-all duration-300 h-8"
                       size="sm"
                     >
-                      <Eye className="w-4 h-4 mr-2" />
-                      {isMovieWatched(movie.id) ? 'Watched' : 'Mark watched'}
+                      <Eye className="w-4 h-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -156,11 +154,10 @@ export const MovieCard = ({
                         }
                       }}
                       disabled={toggleWatchlist.isPending}
-                      className="flex-1 justify-center transition-all duration-300 text-xs px-2 py-1 h-8"
+                      className="flex-1 justify-center transition-all duration-300 h-8"
                       size="sm"
                     >
-                      <Plus className="w-4 h-4 mr-2" />
-                      {isInWatchlist(movie.id) ? 'In watchlist' : 'Add to watchlist'}
+                      <Plus className="w-4 h-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>

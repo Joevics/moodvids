@@ -56,7 +56,7 @@ serve(async (req) => {
     const recommendedMovieIds = new Set(pastRecommendations?.map(r => r.movie_id) || []);
 
     // 2. Get movie suggestions from Gemini
-    let prompt = "Suggest 50 diverse movies based on the following preferences:\n";
+    let prompt = "Suggest 50 EXTREMELY DIVERSE movies based on the following preferences:\n";
     
     // First add advanced search options if any
     const hasAdvancedOptions = preferences.genres?.length || preferences.contentType || 
@@ -85,16 +85,15 @@ serve(async (req) => {
       prompt += `- Mood: ${preferences.mood}\n\n`;
     }
     
-    // If no preferences specified, ask for a random diverse selection
-    if (!hasAdvancedOptions && !preferences.mood) {
-      prompt += "== DIVERSITY CRITERIA ==\n";
-      prompt += "- Include movies from different decades (1950s to present)\n";
-      prompt += "- Include different genres\n";
-      prompt += "- Include movies with different ratings (mostly above 5/10)\n";
-      prompt += "- Include movies with different directors and actors\n";
-      prompt += "- Include some foreign language films\n";
-      prompt += "- Include both well-known classics and hidden gems\n\n";
-    }
+    // Always ensure diversity regardless of user preferences
+    prompt += "== CRITICAL DIVERSITY REQUIREMENTS ==\n";
+    prompt += "- Include an EQUAL BALANCE of movies across different decades from 1950s to present\n";
+    prompt += "- Include AT LEAST 10 MOVIES from the last 5 years (2019-2024)\n";
+    prompt += "- Include movies with various ratings (not just highly-rated classics)\n";
+    prompt += "- Ensure a wide variety of directors and production countries\n";
+    prompt += "- Include equal representation of mainstream and lesser-known films\n";
+    prompt += "- AVOID recommending the same popular movies that everyone knows\n";
+    prompt += "- Prioritize randomness and variety over conventional popularity\n\n";
     
     // Add language preference if not already specified
     if (!preferences.languages?.length) {
@@ -104,6 +103,7 @@ serve(async (req) => {
     prompt += "\nProvide only movie titles, one per line. Do not include any additional information or numbering.";
     prompt += "\nFocus particularly on movies that match ALL of the specified criteria together, not just one aspect.";
     prompt += "\nEnsure great diversity in your recommendations.";
+    prompt += "\nMAKE SURE to include several very recent movies (2022-2024).";
 
     console.log('Sending prompt to Gemini:', prompt);
 
@@ -125,7 +125,7 @@ serve(async (req) => {
           }
         ],
         generationConfig: {
-          temperature: 0.7,
+          temperature: 0.9,
           maxOutputTokens: 1000,
         }
       }),
