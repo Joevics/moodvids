@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Movie } from "@/types/movie";
@@ -31,7 +30,7 @@ export const MovieCard = ({
   isNew,
   showFullDetails = true
 }: MovieCardProps) => {
-  const { toast } = useToast();
+  const { toast: hookToast } = useToast();
   const [imageLoaded, setImageLoaded] = useState(false);
   const { toggleWatch, isMovieWatched } = useWatchHistory();
   const { toggleWatchlist, isInWatchlist } = useWatchlist();
@@ -39,13 +38,11 @@ export const MovieCard = ({
   const [isWatched, setIsWatched] = useState(isMovieWatched(movie.id));
   const [inWatchlist, setInWatchlist] = useState(isInWatchlist(movie.id));
   
-  // Update state when props change
   useEffect(() => {
     setIsWatched(isMovieWatched(movie.id));
     setInWatchlist(isInWatchlist(movie.id));
   }, [movie.id, isMovieWatched, isInWatchlist]);
 
-  // Simple poster-only view
   if (!showFullDetails) {
     return (
       <Card className="overflow-hidden transition-shadow hover:shadow-lg">
@@ -69,7 +66,6 @@ export const MovieCard = ({
     );
   }
 
-  // Copied from MovieDetails.tsx - Handle Watch Toggle function
   const handleWatchToggle = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -84,7 +80,6 @@ export const MovieCard = ({
       
       toast.success(newWatchedState ? 'Added to watched' : 'Removed from watched');
       
-      // If added to watch history, remove from recommendations
       if (newWatchedState && onDelete) {
         await removeRecommendation.mutateAsync(movie.id);
         onDelete();
@@ -98,7 +93,6 @@ export const MovieCard = ({
     }
   };
 
-  // Copied from MovieDetails.tsx - Handle Watchlist Toggle function
   const handleWatchlistToggle = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -113,7 +107,6 @@ export const MovieCard = ({
       
       toast.success(newWatchlistState ? 'Added to watchlist' : 'Removed from watchlist');
       
-      // If added to watchlist, remove from recommendations
       if (newWatchlistState && onDelete) {
         await removeRecommendation.mutateAsync(movie.id);
         onDelete();
@@ -136,7 +129,6 @@ export const MovieCard = ({
     }
   };
 
-  // Full details view
   return (
     <Card className="overflow-hidden transition-shadow hover:shadow-lg">
       <Link to={`/movie/${movie.id}`} className="block">
@@ -176,7 +168,6 @@ export const MovieCard = ({
             </div>
             
             <div className="flex gap-2 mt-2">
-              {/* Replaced buttons with the exact implementation from MovieDetails.tsx */}
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
