@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Movie } from "@/types/movie";
-import { Eye, Plus, Trash2, Star } from "lucide-react";
+import { Eye, Plus, Star, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useWatchHistory } from "@/hooks/useWatchHistory";
@@ -23,8 +22,6 @@ interface MovieCardProps {
 
 export const MovieCard = ({ 
   movie, 
-  onWatchToggle, 
-  onWatchlistToggle, 
   onDelete, 
   isNew,
   showFullDetails = true
@@ -45,48 +42,28 @@ export const MovieCard = ({
   const handleWatchToggle = async () => {
     if (!movie) return;
     
-    try {
-      const newWatchedState = !isMovieWatched(movie.id);
-      
-      await toggleWatch.mutateAsync({
-        movie,
-        isWatched: newWatchedState
-      });
-      
-      // If added to watch history, remove from recommendations
-      if (newWatchedState && onDelete) {
-        await removeRecommendation.mutateAsync(movie.id);
-      }
-      
-      if (onWatchToggle) {
-        onWatchToggle();
-      }
-    } catch (error) {
-      console.error("Failed to update watch status:", error);
+    const newWatchedState = !isMovieWatched(movie.id);
+    await toggleWatch.mutateAsync({
+      movie,
+      isWatched: newWatchedState
+    });
+    
+    if (newWatchedState && onDelete) {
+      await removeRecommendation.mutateAsync(movie.id);
     }
   };
 
   const handleWatchlistToggle = async () => {
     if (!movie) return;
     
-    try {
-      const newWatchlistState = !isInWatchlist(movie.id);
-      
-      await toggleWatchlist.mutateAsync({
-        movie,
-        isInWatchlist: !newWatchlistState
-      });
-      
-      // If added to watchlist, remove from recommendations
-      if (newWatchlistState && onDelete) {
-        await removeRecommendation.mutateAsync(movie.id);
-      }
-      
-      if (onWatchlistToggle) {
-        onWatchlistToggle();
-      }
-    } catch (error) {
-      console.error("Failed to update watchlist:", error);
+    const newWatchlistState = !isInWatchlist(movie.id);
+    await toggleWatchlist.mutateAsync({
+      movie,
+      isInWatchlist: !newWatchlistState
+    });
+    
+    if (newWatchlistState && onDelete) {
+      await removeRecommendation.mutateAsync(movie.id);
     }
   };
 
@@ -177,6 +154,7 @@ export const MovieCard = ({
                       className="flex-1 justify-center transition-all duration-300 text-xs px-2 py-1 h-8"
                       size="sm"
                     >
+                      <Eye className="w-4 h-4 mr-2" />
                       {isMovieWatched(movie.id) ? 'Watched' : 'Mark watched'}
                     </Button>
                   </TooltipTrigger>
@@ -200,6 +178,7 @@ export const MovieCard = ({
                       className="flex-1 justify-center transition-all duration-300 text-xs px-2 py-1 h-8"
                       size="sm"
                     >
+                      <Plus className="w-4 h-4 mr-2" />
                       {isInWatchlist(movie.id) ? 'In watchlist' : 'Add to watchlist'}
                     </Button>
                   </TooltipTrigger>
