@@ -20,7 +20,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <div className="pb-16"> {/* Add padding to account for bottom nav */}
+        <div className="pb-20"> {/* Increased padding to ensure content is visible above the fixed nav */}
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/history" element={<History />} />

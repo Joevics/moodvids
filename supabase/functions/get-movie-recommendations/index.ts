@@ -108,7 +108,7 @@ serve(async (req) => {
     console.log('Sending prompt to Gemini:', prompt);
 
     // Call Gemini API for recommendations
-    const geminiResponse = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent', {
+    const geminiResponse = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
