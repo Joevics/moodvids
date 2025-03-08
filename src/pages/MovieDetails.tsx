@@ -202,9 +202,9 @@ const MovieDetails = () => {
 
   const movieSites = [
     { name: "Archive.org", site: "archive.org", description: "Free digital library with films and videos" },
-    { name: "Tubi TV", site: "tubitv.com", description: "Free streaming with ads" },
+    { name: "FzMovies", site: "fzmovies.co", description: "Streaming site with minimal ads" },
     { name: "Netflix", site: "netflix.com", description: "Popular subscription streaming service" },
-    { name: "FMovies", site: "fmovies.co", description: "Streaming site with minimal ads" }
+    { name: "Tubi TV", site: "tubitv.com", description: "Free streaming with ads" }
   ];
 
   return (
