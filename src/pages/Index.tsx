@@ -90,7 +90,7 @@ const Index = () => {
   return <div className="min-h-screen bg-[#1F1F1F] text-white">
       <main className="container py-8 space-y-8">
         <div className="text-center space-y-4 animate-fadeIn">
-          <h1 className="text-4xl font-bold tracking-tight">MoodVids</h1>
+          <h1 className="text-4xl font-bold tracking-tight">Movie Finder</h1>
           <p className="text-muted-foreground">Discover the perfect movies for your mood and preferences</p>
         </div>
 
