@@ -12,6 +12,7 @@ import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useRecommendations } from "@/hooks/useRecommendations";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useNavigate } from "react-router-dom";
+import SEO from "@/components/SEO";
 const Index = () => {
   const [selectedMood, setSelectedMood] = useState<Mood>();
   const [selectedGenre, setSelectedGenre] = useState<Genre>();
@@ -87,7 +88,14 @@ const Index = () => {
       });
     });
   };
-  return <div className="min-h-screen bg-[#1F1F1F] text-white">
+   return (
+    <>
+      <SEO 
+        title="Movie Finder - Discover the Perfect Movies for Your Mood" 
+        description="Find the perfect movies based on your mood, genre preferences, or specific actors with our intuitive Movie Finder. Personalized recommendations for every viewer."
+        keywords="movies recommender, film finder, ai movie finder, movie to watch, movie recommendation site, mood-based movies, film recommendations"
+      />  
+  <div className="min-h-screen bg-[#1F1F1F] text-white">
       <main className="container py-8 space-y-8">
         <div className="text-center space-y-4 animate-fadeIn">
           <h1 className="text-4xl font-bold tracking-tight">Movie Finder</h1>
