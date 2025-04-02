@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { MoodSelector } from "@/components/MoodSelector";
 import { GenreSelector } from "@/components/GenreSelector";
@@ -13,6 +14,7 @@ import { useRecommendations } from "@/hooks/useRecommendations";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useNavigate } from "react-router-dom";
 import SEO from "@/components/SEO";
+
 const Index = () => {
   const [selectedMood, setSelectedMood] = useState<Mood>();
   const [selectedGenre, setSelectedGenre] = useState<Genre>();
@@ -21,9 +23,7 @@ const Index = () => {
   const [selectedLanguage, setSelectedLanguage] = useState<Language>();
   const [selectedPeople, setSelectedPeople] = useState<string[]>([]);
   const [advancedOptionsOpen, setAdvancedOptionsOpen] = useState(false);
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const navigate = useNavigate();
   const recommendations = useRecommendations({
     mood: selectedMood,
@@ -88,104 +88,111 @@ const Index = () => {
       });
     });
   };
-   return (
+  
+  return (
     <>
       <SEO 
         title="Movie Finder - Discover the Perfect Movies for Your Mood" 
         description="Find the perfect movies based on your mood, genre preferences, or specific actors with our intuitive Movie Finder. Personalized recommendations for every viewer."
         keywords="movies recommender, film finder, ai movie finder, movie to watch, movie recommendation site, mood-based movies, film recommendations"
       />  
-  <div className="min-h-screen bg-[#1F1F1F] text-white">
-      <main className="container py-8 space-y-8">
-        <div className="text-center space-y-4 animate-fadeIn">
-          <h1 className="text-4xl font-bold tracking-tight">Movie Finder</h1>
-          <p className="text-muted-foreground">Discover the perfect movies for your mood and preferences</p>
-        </div>
-
-        <section className="space-y-12">
-          {/* Mood selector moved before advanced options */}
-          <div className="text-center space-y-4">
-            <h2 className="text-2xl font-semibold">How are you feeling today?</h2>
-            <MoodSelector selectedMood={selectedMood} onSelect={setSelectedMood} />
+      <div className="min-h-screen bg-[#1F1F1F] text-white">
+        <main className="container py-8 space-y-8">
+          <div className="text-center space-y-4 animate-fadeIn">
+            <h1 className="text-4xl font-bold tracking-tight">Movie Finder</h1>
+            <p className="text-muted-foreground">Discover the perfect movies for your mood and preferences</p>
           </div>
 
-          {/* Advanced Search moved below mood selector */}
-          <Accordion type="single" collapsible className="w-full mb-8" defaultValue={advancedOptionsOpen ? "advanced" : undefined} onValueChange={handleAccordionChange}>
-            <AccordionItem value="advanced" className="border-none">
-              <AccordionTrigger className="text-xl font-medium text-center justify-center py-4 px-6 bg-secondary/20 rounded-lg hover:bg-secondary/30 transition-all">
-                Advanced Search Options
-              </AccordionTrigger>
-              <AccordionContent className="pt-6">
-                <div className="space-y-8">
-                  <div className="relative">
-                    <div className="overflow-x-auto pb-4 scroll-smooth scrollbar-none" id="advancedSearch" style={{
-                    scrollBehavior: 'smooth'
-                  }}>
-                      <div className="flex space-x-8 min-w-max px-4">
-                        <div className="w-72">
-                          <h3 className="text-lg font-medium mb-4 text-center">Genres</h3>
-                          <GenreSelector selectedGenres={selectedGenre ? [selectedGenre] : []} onSelect={handleGenreSelect} />
-                        </div>
-                        <div className="w-72">
-                          <h3 className="text-lg font-medium mb-4 text-center">Content Type</h3>
-                          <ContentTypeSelector selectedType={selectedContentType} onSelect={handleContentTypeSelect} />
-                        </div>
-                        <div className="w-72">
-                          <h3 className="text-lg font-medium mb-4 text-center">Time Period</h3>
-                          <TimePeriodSelector selectedPeriod={selectedTimePeriod} onSelect={handleTimePeriodSelect} />
-                        </div>
-                        <div className="w-72">
-                          <h3 className="text-lg font-medium mb-4 text-center">Language</h3>
-                          <LanguageSelector selectedLanguages={selectedLanguage ? [selectedLanguage] : []} onSelect={handleLanguageSelect} />
-                        </div>
-                        <div className="w-72">
-                          <h3 className="text-lg font-medium mb-4 text-center">Cast & Crew</h3>
-                          <PersonSelector selectedPeople={selectedPeople} onAdd={handleAddPerson} onRemove={handleRemovePerson} />
+          <section className="space-y-12">
+            {/* Mood selector moved before advanced options */}
+            <div className="text-center space-y-4">
+              <h2 className="text-2xl font-semibold">How are you feeling today?</h2>
+              <MoodSelector selectedMood={selectedMood} onSelect={setSelectedMood} />
+            </div>
+
+            {/* Advanced Search moved below mood selector */}
+            <Accordion type="single" collapsible className="w-full mb-8" defaultValue={advancedOptionsOpen ? "advanced" : undefined} onValueChange={handleAccordionChange}>
+              <AccordionItem value="advanced" className="border-none">
+                <AccordionTrigger className="text-xl font-medium text-center justify-center py-4 px-6 bg-secondary/20 rounded-lg hover:bg-secondary/30 transition-all">
+                  Advanced Search Options
+                </AccordionTrigger>
+                <AccordionContent className="pt-6">
+                  <div className="space-y-8">
+                    <div className="relative">
+                      <div className="overflow-x-auto pb-4 scroll-smooth scrollbar-none" id="advancedSearch" style={{
+                        scrollBehavior: 'smooth'
+                      }}>
+                        <div className="flex space-x-8 min-w-max px-4">
+                          <div className="w-72">
+                            <h3 className="text-lg font-medium mb-4 text-center">Genres</h3>
+                            <GenreSelector selectedGenres={selectedGenre ? [selectedGenre] : []} onSelect={handleGenreSelect} />
+                          </div>
+                          <div className="w-72">
+                            <h3 className="text-lg font-medium mb-4 text-center">Content Type</h3>
+                            <ContentTypeSelector selectedType={selectedContentType} onSelect={handleContentTypeSelect} />
+                          </div>
+                          <div className="w-72">
+                            <h3 className="text-lg font-medium mb-4 text-center">Time Period</h3>
+                            <TimePeriodSelector selectedPeriod={selectedTimePeriod} onSelect={handleTimePeriodSelect} />
+                          </div>
+                          <div className="w-72">
+                            <h3 className="text-lg font-medium mb-4 text-center">Language</h3>
+                            <LanguageSelector selectedLanguages={selectedLanguage ? [selectedLanguage] : []} onSelect={handleLanguageSelect} />
+                          </div>
+                          <div className="w-72">
+                            <h3 className="text-lg font-medium mb-4 text-center">Cast & Crew</h3>
+                            <PersonSelector selectedPeople={selectedPeople} onAdd={handleAddPerson} onRemove={handleRemovePerson} />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    {/* Arrow buttons positioned farther outside */}
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 -left-4 md:-left-8 flex items-center h-full">
-                      <button className="bg-secondary/70 hover:bg-secondary/90 p-3 rounded-r-lg shadow-lg transition-colors duration-200" onClick={() => {
-                      const element = document.getElementById('advancedSearch');
-                      if (element) element.scrollLeft -= 350;
-                    }}>
-                        <ChevronLeft className="w-5 h-5 text-white" />
-                      </button>
-                    </div>
-                    <div className="absolute right-0 top-1/2 -translate-y-1/2 -right-4 md:-right-8 flex items-center h-full">
-                      <button className="bg-secondary/70 hover:bg-secondary/90 p-3 rounded-l-lg shadow-lg transition-colors duration-200" onClick={() => {
-                      const element = document.getElementById('advancedSearch');
-                      if (element) element.scrollLeft += 350;
-                    }}>
-                        <ChevronRight className="w-5 h-5 text-white" />
-                      </button>
+                      {/* Arrow buttons positioned farther outside */}
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 -left-4 md:-left-8 flex items-center h-full">
+                        <button className="bg-secondary/70 hover:bg-secondary/90 p-3 rounded-r-lg shadow-lg transition-colors duration-200" onClick={() => {
+                          const element = document.getElementById('advancedSearch');
+                          if (element) element.scrollLeft -= 350;
+                        }}>
+                          <ChevronLeft className="w-5 h-5 text-white" />
+                        </button>
+                      </div>
+                      <div className="absolute right-0 top-1/2 -translate-y-1/2 -right-4 md:-right-8 flex items-center h-full">
+                        <button className="bg-secondary/70 hover:bg-secondary/90 p-3 rounded-l-lg shadow-lg transition-colors duration-200" onClick={() => {
+                          const element = document.getElementById('advancedSearch');
+                          if (element) element.scrollLeft += 350;
+                        }}>
+                          <ChevronRight className="w-5 h-5 text-white" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
 
-          {/* Display selected advanced options */}
-          {selectedOptions.length > 0 && <div className="bg-secondary/10 p-4 rounded-lg animate-fadeIn">
-              <h3 className="text-lg font-medium mb-2">Selected Options:</h3>
-              <ul className="list-disc pl-5 space-y-1">
-                {selectedOptions.map((option, index) => <li key={index}>{option}</li>)}
-              </ul>
-            </div>}
+            {/* Display selected advanced options */}
+            {selectedOptions.length > 0 && (
+              <div className="bg-secondary/10 p-4 rounded-lg animate-fadeIn">
+                <h3 className="text-lg font-medium mb-2">Selected Options:</h3>
+                <ul className="list-disc pl-5 space-y-1">
+                  {selectedOptions.map((option, index) => <li key={index}>{option}</li>)}
+                </ul>
+              </div>
+            )}
 
-          <div className="text-center">
-            <Button size="lg" onClick={handleGetRecommendations} className="bg-primary hover:bg-primary/90 text-white px-8" disabled={recommendations.isFetching}>
-              {recommendations.isFetching ? <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Getting Recommendations...
-                </> : "Get Recommendations"}
-            </Button>
-          </div>
-
-        </section>
-      </main>
-    </div>;
+            <div className="text-center">
+              <Button size="lg" onClick={handleGetRecommendations} className="bg-primary hover:bg-primary/90 text-white px-8" disabled={recommendations.isFetching}>
+                {recommendations.isFetching ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Getting Recommendations...
+                  </>
+                ) : "Get Recommendations"}
+              </Button>
+            </div>
+          </section>
+        </main>
+      </div>
+    </>
+  );
 };
+
 export default Index;

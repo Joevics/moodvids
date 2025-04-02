@@ -1,3 +1,4 @@
+
 import { Helmet } from "react-helmet-async";
 
 interface SEOProps {
@@ -17,7 +18,7 @@ const SEO = ({ title, description, keywords, image, url }: SEOProps) => {
       {/* Basic Meta Tags */}
       <title>{title}</title>
       <meta name="description" content={description} />
-      <meta name="keywords" content={keywords || "Mood-based videos, AI videos, video sharing, entertainment"} />
+      {keywords && <meta name="keywords" content={keywords} />}
       <meta name="author" content="MoodVid" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
 
