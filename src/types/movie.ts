@@ -1,3 +1,4 @@
+
 export interface Movie {
   id: number;
   title: string;
@@ -63,5 +64,7 @@ export interface UserPreferences {
   genres?: Genre[];
   contentType?: ContentType;
   timePeriod?: TimePeriod;
+  languages?: Language[];
   actor?: string;
+  selectedPeople?: string[];
 }

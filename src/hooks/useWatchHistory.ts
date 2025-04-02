@@ -49,7 +49,14 @@ export const useWatchHistory = () => {
         const localHistory = getLocalWatchHistory();
         
         // Then try to get from Supabase
-        const userId = await getOrCreateAnonymousId();
+        let userId;
+        try {
+          userId = await getOrCreateAnonymousId();
+        } catch (error) {
+          console.error('Error getting anonymous ID:', error);
+          return localHistory;
+        }
+        
         const { data, error } = await supabase
           .from('watch_history')
           .select('*')
@@ -100,10 +107,12 @@ export const useWatchHistory = () => {
         const localHistory = getLocalWatchHistory();
         
         // Try to get user ID for Supabase
-        const userId = await getOrCreateAnonymousId().catch(err => {
+        let userId = null;
+        try {
+          userId = await getOrCreateAnonymousId();
+        } catch (err) {
           console.error('Error getting user ID:', err);
-          return null;
-        });
+        }
         
         // Check for existing entry with the same state
         const existingEntry = watchHistory.find(
@@ -121,17 +130,17 @@ export const useWatchHistory = () => {
             
             // Also attempt to remove from Supabase
             if (userId) {
-              const { error } = await supabase
-                .from('watch_history')
-                .delete()
-                .eq('id', existingEntry.id)
-                .catch(err => {
-                  console.error('Error deleting from Supabase:', err);
-                  return { error: err };
-                });
-              
-              if (error) {
-                console.error('Supabase deletion error:', error);
+              try {
+                const { error } = await supabase
+                  .from('watch_history')
+                  .delete()
+                  .eq('id', existingEntry.id);
+                
+                if (error) {
+                  console.error('Supabase deletion error:', error);
+                }
+              } catch (err) {
+                console.error('Error deleting from Supabase:', err);
               }
             }
             
@@ -164,31 +173,31 @@ export const useWatchHistory = () => {
           
           // Also attempt to save to Supabase
           if (userId) {
-            const { data, error } = await supabase
-              .from('watch_history')
-              .upsert({
-                user_id: userId,
-                movie_id: movie.id,
-                movie_title: movie.title,
-                poster_path: movie.poster_path,
-                is_watched: true,
-                watched_at: timestamp
-              })
-              .select()
-              .single()
-              .catch(err => {
-                console.error('Error upserting to Supabase:', err);
-                return { data: null, error: err };
-              });
-            
-            if (error) {
-              console.error('Supabase upsert error:', error);
-            } else if (data) {
-              // If Supabase save was successful, update the local entry with the remote ID
-              const finalUpdatedHistory = updatedHistory.map(item => 
-                item.id === newEntry.id ? { ...item, id: data.id } : item
-              );
-              saveLocalWatchHistory(finalUpdatedHistory);
+            try {
+              const { data, error } = await supabase
+                .from('watch_history')
+                .upsert({
+                  user_id: userId,
+                  movie_id: movie.id,
+                  movie_title: movie.title,
+                  poster_path: movie.poster_path,
+                  is_watched: true,
+                  watched_at: timestamp
+                })
+                .select()
+                .single();
+              
+              if (error) {
+                console.error('Supabase upsert error:', error);
+              } else if (data) {
+                // If Supabase save was successful, update the local entry with the remote ID
+                const finalUpdatedHistory = updatedHistory.map(item => 
+                  item.id === newEntry.id ? { ...item, id: data.id } : item
+                );
+                saveLocalWatchHistory(finalUpdatedHistory);
+              }
+            } catch (err) {
+              console.error('Error upserting to Supabase:', err);
             }
           }
           
