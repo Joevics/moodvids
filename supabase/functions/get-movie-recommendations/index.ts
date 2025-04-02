@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.0';
@@ -20,102 +21,25 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-// Add new handler for fetching individual movie details with trailers
-const handleMovieRequest = async (movieId: number, tmdbApiKey: string) => {
-  try {
-    // Get movie details
-    const movieResponse = await fetch(
-      `https://api.themoviedb.org/3/movie/${movieId}?api_key=${tmdbApiKey}&append_to_response=videos,watch/providers`
-    );
-    
-    if (!movieResponse.ok) {
-      throw new Error(`Failed to fetch movie details: ${movieResponse.status}`);
-    }
-    
-    const movieData = await movieResponse.json();
-    
-    // Process streaming options
-    const watchProviders = movieData["watch/providers"]?.results?.US || {};
-    const streamingOptions = {
-      stream: watchProviders.flatrate?.map((provider: any) => ({
-        provider: provider.provider_name,
-        url: watchProviders.link,
-        logo: `https://image.tmdb.org/t/p/original${provider.logo_path}`
-      })) || [],
-      rent: watchProviders.rent?.map((provider: any) => ({
-        provider: provider.provider_name,
-        url: watchProviders.link,
-        logo: `https://image.tmdb.org/t/p/original${provider.logo_path}`
-      })) || [],
-      buy: watchProviders.buy?.map((provider: any) => ({
-        provider: provider.provider_name,
-        url: watchProviders.link,
-        logo: `https://image.tmdb.org/t/p/original${provider.logo_path}`
-      })) || []
-    };
-    
-    // Extract trailer
-    let trailerKey = null;
-    if (movieData.videos && movieData.videos.results) {
-      const trailer = movieData.videos.results.find(
-        (video: any) => 
-          (video.type === "Trailer" || video.type === "Teaser") && 
-          video.site === "YouTube"
-      );
-      trailerKey = trailer ? trailer.key : null;
-    }
-    
-    // Extract genres
-    const genres = movieData.genres.map((g: any) => g.name);
-    
-    // Create the movie object
-    const movie = {
-      id: movieData.id,
-      title: movieData.title,
-      overview: movieData.overview,
-      poster_path: movieData.poster_path,
-      release_date: movieData.release_date,
-      vote_average: movieData.vote_average,
-      genres,
-      streaming_options: streamingOptions,
-      trailer_key: trailerKey
-    };
-    
-    return movie;
-  } catch (error) {
-    console.error("Error fetching movie details:", error);
-    throw error;
+serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { 
+      status: 204, 
+      headers: corsHeaders 
+    });
   }
-};
 
-Deno.serve(async (req) => {
-  // Handle CORS
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-  
   try {
-    const { preferences, userId, movieId } = await req.json();
-    const tmdbApiKey = Deno.env.get("TMDB_API_KEY");
-    const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
-    
-    if (!tmdbApiKey) {
-      return new Response(
-        JSON.stringify({ error: "TMDB API key not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    const { preferences, userId } = await req.json();
+    console.log('Received preferences:', preferences);
+    console.log('User ID:', userId);
+
+    // Check if required environment variables are set
+    if (!geminiApiKey || !tmdbApiKey) {
+      throw new Error('Required API keys are not set');
     }
-    
-    // If movieId is provided, fetch details for a single movie
-    if (movieId) {
-      const movie = await handleMovieRequest(movieId, tmdbApiKey);
-      return new Response(
-        JSON.stringify({ movie }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    
-    // Otherwise, handle recommendations as before
+
     // 1. Get user's watch history and past recommendations
     const { data: watchHistory } = await supabase
       .from('watch_history')
