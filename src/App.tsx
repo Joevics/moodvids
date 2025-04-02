@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import History from "./pages/History";
 import Recommendations from "./pages/Recommendations";
 import Watchlist from "./pages/Watchlist";
+import TopPicks from "./pages/TopPicks";
 import MovieDetails from "./pages/MovieDetails";
 import NotFound from "./pages/NotFound";
 
@@ -20,12 +21,13 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <div className="pb-20"> {/* Increased padding to ensure content is visible above the fixed nav */}
+        <div className="pb-24"> {/* Increased padding to ensure content is visible above the fixed nav */}
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/history" element={<History />} />
             <Route path="/recommendations" element={<Recommendations />} />
             <Route path="/watchlist" element={<Watchlist />} />
+            <Route path="/top-picks" element={<TopPicks />} />
             <Route path="/movie/:id" element={<MovieDetails />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

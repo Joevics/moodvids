@@ -54,6 +54,45 @@ export type Database = {
         }
         Relationships: []
       }
+      top_picks: {
+        Row: {
+          comment: string | null
+          created_at: string
+          genres: string[] | null
+          id: string
+          movie_id: number
+          movie_title: string
+          rating: number
+          release_year: string
+          trailer_key: string | null
+          user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          genres?: string[] | null
+          id?: string
+          movie_id: number
+          movie_title: string
+          rating: number
+          release_year: string
+          trailer_key?: string | null
+          user_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          genres?: string[] | null
+          id?: string
+          movie_id?: number
+          movie_title?: string
+          rating?: number
+          release_year?: string
+          trailer_key?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       watch_history: {
         Row: {
           id: string
