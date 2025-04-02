@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Movie } from "@/types/movie";
@@ -10,6 +11,7 @@ import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { useRecommendations } from "@/hooks/useRecommendations";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { RecommendButton } from "./RecommendButton";
 
 interface MovieCardProps {
   movie: Movie;
@@ -101,7 +103,7 @@ export const MovieCard = ({
               </p>
             </div>
             
-            <div className="flex gap-3 mt-2">
+            <div className="flex gap-2 mt-2">
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -162,6 +164,26 @@ export const MovieCard = ({
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>{isInWatchlist(movie.id) ? 'Remove from watchlist' : 'Add to watchlist'}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}>
+                      <RecommendButton 
+                        movie={movie}
+                        className="flex-1 justify-center h-8"
+                        size="sm"
+                      />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Recommend this movie</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>

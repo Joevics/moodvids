@@ -11,6 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { WatchOptions } from "@/components/WatchOptions";
 import { useRecommendations } from "@/hooks/useRecommendations";
+import { RecommendButton } from "@/components/RecommendButton";
 
 const MovieDetails = () => {
   const { id } = useParams();
@@ -289,6 +290,24 @@ const MovieDetails = () => {
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>{isInWatchlist(movie?.id || 0) ? 'Remove from watchlist' : 'Add to watchlist'}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <RecommendButton 
+                      movie={movie || { id: 0, title: '', overview: '', poster_path: '', release_date: '', vote_average: 0, genres: [] }}
+                      className="flex-1 justify-center text-xs px-2 py-1 h-8"
+                      size="sm"
+                      variant="outline"
+                    />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Recommend this movie</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

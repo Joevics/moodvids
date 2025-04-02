@@ -13,6 +13,7 @@ import Recommendations from "./pages/Recommendations";
 import Watchlist from "./pages/Watchlist";
 import MovieDetails from "./pages/MovieDetails";
 import NotFound from "./pages/NotFound";
+import TopPicks from "./pages/TopPicks";
 
 // Create a new QueryClient instance
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => {
                   <Route path="/history" element={<History />} />
                   <Route path="/recommendations" element={<Recommendations />} />
                   <Route path="/watchlist" element={<Watchlist />} />
+                  <Route path="/top-picks" element={<TopPicks />} />
                   <Route path="/movie/:id" element={<MovieDetails />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
