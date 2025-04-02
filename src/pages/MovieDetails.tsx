@@ -205,16 +205,6 @@ const MovieDetails = () => {
     { name: "FzMovies", site: "fzmovies.net", description: "Streaming site with minimal ads" },
     { name: "Netflix", site: "netflix.com", description: "Popular subscription streaming service" },
     { name: "Tubi TV", site: "tubitv.com", description: "Free streaming with ads" }
-      { 
-    name: "O2TVSeries", 
-    site: (movieName) => `https://o2tvseries4.com/${encodeURIComponent(movieName)}/index.html`, 
-    description: "Search & download series on O2TVSeries"
-  },
-  { 
-    name: "MobileTVShows", 
-    site: (movieName) => `https://mobiletvshows.site/subfolder-${encodeURIComponent(movieName)}.htm`, 
-    description: "Search & download series on MobileTVShows"
-  }
   ];
 
   return (
