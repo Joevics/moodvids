@@ -1,89 +1,160 @@
-
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Movie, Mood, Genre, ContentType, TimePeriod, Language } from "@/types/movie";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getOrCreateAnonymousId } from "@/lib/anonymousUser";
+import { Movie, UserPreferences } from "@/types/movie";
+import { useWatchHistory } from "./useWatchHistory";
+import { useWatchlist } from "./useWatchlist";
 
-interface MoviePreferences {
-  mood?: Mood;
-  genres?: Genre[];
-  contentType?: ContentType;
-  timePeriod?: TimePeriod;
-  languages?: Language[];
-  selectedPeople?: string[];
-}
-
+// Local storage key for recommendations
 const RECOMMENDATIONS_STORAGE_KEY = 'moodflix-recommendations';
 
-const getStoredRecommendations = (): Movie[] => {
-  const stored = localStorage.getItem(RECOMMENDATIONS_STORAGE_KEY);
-  return stored ? JSON.parse(stored) : [];
+// Get recommendations from local storage
+const getLocalRecommendations = (): Movie[] => {
+  try {
+    const stored = localStorage.getItem(RECOMMENDATIONS_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.error('Error reading recommendations from local storage:', error);
+    return [];
+  }
 };
 
-const setStoredRecommendations = (movies: Movie[]) => {
-  localStorage.setItem(RECOMMENDATIONS_STORAGE_KEY, JSON.stringify(movies));
+// Save recommendations to local storage
+const saveLocalRecommendations = (recommendations: Movie[]) => {
+  try {
+    localStorage.setItem(RECOMMENDATIONS_STORAGE_KEY, JSON.stringify(recommendations));
+    // Also store the timestamp of when recommendations were last generated
+    localStorage.setItem('recommendations-generated-at', new Date().toISOString());
+  } catch (error) {
+    console.error('Error saving recommendations to local storage:', error);
+  }
 };
 
-export const useRecommendations = (preferences?: MoviePreferences) => {
+export const useRecommendations = (preferences?: UserPreferences) => {
   const queryClient = useQueryClient();
+  const [recommendationsCache, setRecommendationsCache] = useState<Movie[]>(getLocalRecommendations);
+  const { watchHistory } = useWatchHistory();
+  const { watchlist } = useWatchlist();
 
-  const query = useQuery({
-    queryKey: ['recommendations'],
-    queryFn: async () => {
-      if (!preferences) {
-        return getStoredRecommendations();
-      }
+  // Keep local cache in sync with localStorage
+  useEffect(() => {
+    setRecommendationsCache(getLocalRecommendations());
+  }, []);
 
-      const userId = await getOrCreateAnonymousId();
-      const { data, error } = await supabase.functions.invoke('get-movie-recommendations', {
-        body: { preferences, userId },
-      });
-
-      if (error) throw error;
-
-      const timestamp = new Date().toISOString();
-      const newRecommendations = data.recommendations.map((movie: Movie) => ({
-        ...movie,
-        generated_at: timestamp
-      }));
+  // When watchHistory or watchlist changes, filter recommendations to remove any movies that are now in history or watchlist
+  useEffect(() => {
+    const currentRecommendations = getLocalRecommendations();
+    
+    if (currentRecommendations.length > 0) {
+      const watchedMovieIds = new Set(watchHistory.map(item => item.movie_id));
+      const watchlistMovieIds = new Set(watchlist.map(item => item.id));
       
-      const existingRecommendations = getStoredRecommendations();
-      
-      // Combine new and existing recommendations, removing duplicates
-      const combined = [...newRecommendations, ...existingRecommendations];
-      const unique = combined.filter((movie, index) => 
-        combined.findIndex(m => m.id === movie.id) === index
+      const filteredRecommendations = currentRecommendations.filter(movie => 
+        !watchedMovieIds.has(movie.id) && !watchlistMovieIds.has(movie.id)
       );
+      
+      if (filteredRecommendations.length !== currentRecommendations.length) {
+        saveLocalRecommendations(filteredRecommendations);
+        setRecommendationsCache(filteredRecommendations);
+      }
+    }
+  }, [watchHistory, watchlist]);
 
-      // Sort by generation time, newest first
-      const sorted = unique.sort((a, b) => {
-        if (!a.generated_at && !b.generated_at) return 0;
-        if (!a.generated_at) return 1;
-        if (!b.generated_at) return -1;
-        return new Date(b.generated_at).getTime() - new Date(a.generated_at).getTime();
-      });
-
-      setStoredRecommendations(sorted);
-      localStorage.setItem('recommendations-generated-at', timestamp);
-      return sorted;
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
+    queryKey: ['recommendations', preferences],
+    queryFn: async () => {
+      try {
+        const userId = await getOrCreateAnonymousId();
+        
+        // Get watched movie titles (necessary for filtering)
+        const watchedMovieTitles = new Set(watchHistory.map(item => item.movie_title.toLowerCase()));
+        const watchedMovieIds = new Set(watchHistory.map(item => item.movie_id));
+        const watchlistMovieIds = new Set(watchlist.map(item => item.id));
+        
+        // Call Supabase Edge Function to get recommendations
+        const { data, error } = await supabase.functions.invoke('get-movie-recommendations', {
+          body: {
+            preferences: preferences || {},
+            userId,
+            watchedMovieTitles: Array.from(watchedMovieTitles) // Send the movie titles to prevent recommending similar titles
+          }
+        });
+        
+        if (error) throw error;
+        
+        if (data?.recommendations) {
+          // Add timestamp for UI updates
+          const now = new Date().toISOString();
+          const recommendationsWithTimestamp = data.recommendations.map((movie: Movie) => ({
+            ...movie,
+            generated_at: now
+          }));
+          
+          // Filter out any movies that are in watch history or watchlist
+          const filteredRecommendations = recommendationsWithTimestamp.filter((movie: Movie) => 
+            !watchedMovieIds.has(movie.id) && !watchlistMovieIds.has(movie.id)
+          );
+          
+          // Save to local storage
+          saveLocalRecommendations(filteredRecommendations);
+          
+          return filteredRecommendations;
+        }
+        
+        return [];
+      } catch (error) {
+        console.error('Error fetching recommendations:', error);
+        return recommendationsCache; // Return cached recommendations if fetching fails
+      }
     },
-    enabled: false,
-    staleTime: Infinity,
-    gcTime: Infinity,
+    enabled: false // Don't run automatically, only when refetch is called
   });
 
   const removeRecommendation = useMutation({
-    mutationFn: (movieId: number) => {
-      const current = getStoredRecommendations();
-      const updated = current.filter(movie => movie.id !== movieId);
-      setStoredRecommendations(updated);
-      queryClient.setQueryData(['recommendations'], updated);
-      return Promise.resolve(updated);
+    mutationFn: async (movieId: number) => {
+      try {
+        // Remove from local storage
+        const currentRecommendations = getLocalRecommendations();
+        const filteredRecommendations = currentRecommendations.filter(movie => movie.id !== movieId);
+        saveLocalRecommendations(filteredRecommendations);
+        
+        // Try to remove from Supabase if possible
+        const userId = await getOrCreateAnonymousId().catch(() => null);
+        if (userId) {
+          await supabase
+            .from('recommendations')
+            .delete()
+            .eq('user_id', userId)
+            .eq('movie_id', movieId);
+        }
+        
+        return movieId;
+      } catch (error) {
+        console.error('Error removing recommendation:', error);
+        throw error;
+      }
+    },
+    onSuccess: (movieId) => {
+      // Update cache with filtered recommendations
+      queryClient.setQueryData(['recommendations', preferences], (oldData: Movie[] = []) => {
+        return oldData.filter(movie => movie.id !== movieId);
+      });
+      
+      // Also update local cache
+      setRecommendationsCache(prev => prev.filter(movie => movie.id !== movieId));
     }
   });
 
+  // Ensure returned data includes cached recommendations if no data from the query
+  const recommendationsData = data || recommendationsCache;
+
   return {
-    ...query,
+    data: recommendationsData,
+    isLoading,
+    isFetching,
+    error,
+    refetch,
     removeRecommendation,
   };
 };

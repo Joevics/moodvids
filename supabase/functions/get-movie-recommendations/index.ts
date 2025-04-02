@@ -31,9 +31,10 @@ serve(async (req) => {
   }
 
   try {
-    const { preferences, userId } = await req.json();
+    const { preferences, userId, watchedMovieTitles = [] } = await req.json();
     console.log('Received preferences:', preferences);
     console.log('User ID:', userId);
+    console.log('Watched Movie Titles Count:', watchedMovieTitles.length);
 
     // Check if required environment variables are set
     if (!geminiApiKey || !tmdbApiKey) {
@@ -43,7 +44,7 @@ serve(async (req) => {
     // 1. Get user's watch history and past recommendations
     const { data: watchHistory } = await supabase
       .from('watch_history')
-      .select('movie_id')
+      .select('movie_id, movie_title')
       .eq('user_id', userId)
       .eq('is_watched', true);
 
@@ -52,8 +53,17 @@ serve(async (req) => {
       .select('movie_id')
       .eq('user_id', userId);
 
+    // Combine database history with passed titles
     const watchedMovieIds = new Set(watchHistory?.map(h => h.movie_id) || []);
     const recommendedMovieIds = new Set(pastRecommendations?.map(r => r.movie_id) || []);
+    
+    // Get all watched movie titles (from both the database and the passed array)
+    const allWatchedMovieTitles = new Set([
+      ...(watchHistory?.map(h => h.movie_title.toLowerCase()) || []),
+      ...(watchedMovieTitles?.map((title: string) => title.toLowerCase()) || [])
+    ]);
+
+    console.log('Total unique watched titles:', allWatchedMovieTitles.size);
 
     // 2. Get movie suggestions from Gemini
     let prompt = "Suggest 50 EXTREMELY DIVERSE movies based on the following preferences:\n";
@@ -100,12 +110,19 @@ serve(async (req) => {
       prompt += `- Languages: Include a mix, but primarily English\n`;
     }
     
+    // Add list of watched movies to avoid recommending similar titles
+    if (allWatchedMovieTitles.size > 0) {
+      prompt += "\n== MOVIES TO AVOID RECOMMENDING (USER ALREADY WATCHED) ==\n";
+      prompt += Array.from(allWatchedMovieTitles).slice(0, 50).join(", ");
+      prompt += "\n\nDO NOT recommend these movies or very similar movies with almost identical titles.\n";
+    }
+    
     prompt += "\nProvide only movie titles, one per line. Do not include any additional information or numbering.";
     prompt += "\nFocus particularly on movies that match ALL of the specified criteria together, not just one aspect.";
     prompt += "\nEnsure great diversity in your recommendations.";
     prompt += "\nMAKE SURE to include several very recent movies (2022-2024).";
 
-    console.log('Sending prompt to Gemini:', prompt);
+    console.log('Sending prompt to Gemini');
 
     // Call Gemini API for recommendations
     const geminiResponse = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent', {
@@ -138,7 +155,6 @@ serve(async (req) => {
     }
 
     const geminiData = await geminiResponse.json();
-    console.log('Gemini response:', geminiData);
     
     let movieTitles = [];
     
@@ -157,13 +173,19 @@ serve(async (req) => {
         .slice(0, 50);
     }
 
-    console.log('Extracted movie titles:', movieTitles);
+    console.log('Extracted movie titles:', movieTitles.length);
 
     // 3. Get movie details from TMDb and filter out watched/recommended
     const movies = [];
     
     for (const title of movieTitles) {
       try {
+        // Skip if the title is in the watched list (case insensitive)
+        if (allWatchedMovieTitles.has(title.toLowerCase())) {
+          console.log(`Skipping ${title} - already in watch history`);
+          continue;
+        }
+        
         // Search for movie in TMDb
         const searchResponse = await fetch(
           `https://api.themoviedb.org/3/search/movie?api_key=${tmdbApiKey}&query=${encodeURIComponent(title)}&language=en-US&page=1`,
