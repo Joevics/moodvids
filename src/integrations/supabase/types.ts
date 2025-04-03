@@ -207,9 +207,57 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_vote: {
+        Args: {
+          pick_id: string
+          user_identifier: string
+          vote_direction: string
+        }
+        Returns: undefined
+      }
+      change_vote: {
+        Args: {
+          pick_id: string
+          user_identifier: string
+          new_vote_type: string
+        }
+        Returns: undefined
+      }
       current_user_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      decrement: {
+        Args: {
+          i: number
+          x: number
+        }
+        Returns: number
+      }
+      get_user_vote: {
+        Args: {
+          pick_id: string
+          user_identifier: string
+        }
+        Returns: {
+          id: string
+          vote_type: string
+        }[]
+      }
+      increment: {
+        Args: {
+          i: number
+          x: number
+        }
+        Returns: number
+      }
+      remove_vote: {
+        Args: {
+          pick_id: string
+          user_identifier: string
+          vote_direction: string
+        }
+        Returns: undefined
       }
     }
     Enums: {

@@ -9,9 +9,9 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-// Create a custom typed client that includes the functions to increment and decrement
+// Create a custom typed client that includes the functions we need for voting
 type SupabaseClientWithFunctions = ReturnType<typeof createClient<Database>> & {
-  rpc: (fn: string, params?: { x: number }) => {
+  rpc: (fn: string, params?: Record<string, any>) => {
     select: (column: string) => {
       single: () => Promise<{ data: any; error: any }>
     }

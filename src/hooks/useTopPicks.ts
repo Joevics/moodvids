@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -312,6 +311,7 @@ export const useTopPicks = () => {
         // First, check if the user has already voted on this top pick
         const { data: existingVote, error: selectError } = await supabase
           .rpc('get_user_vote', { pick_id: topPickId, user_identifier: userId })
+          .select('*')
           .single();
         
         if (selectError && selectError.message !== 'No rows returned') {
