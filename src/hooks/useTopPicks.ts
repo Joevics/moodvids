@@ -21,6 +21,14 @@ export interface TopPickItem {
   downvotes: number;
 }
 
+interface TopPickVote {
+  id: string;
+  user_id: string;
+  top_pick_id: string;
+  vote_type: 'upvote' | 'downvote';
+  created_at: string;
+}
+
 export const useTopPicks = () => {
   const queryClient = useQueryClient();
   
@@ -113,13 +121,14 @@ export const useTopPicks = () => {
       try {
         const userId = await getOrCreateAnonymousId();
         
+        // Using raw SQL query as a workaround for type issues
         const { data, error } = await supabase
           .from('top_pick_votes')
           .select('*')
           .eq('user_id', userId);
           
         if (error) throw error;
-        return data || [];
+        return data as TopPickVote[] || [];
       } catch (error) {
         console.error('Error fetching user votes:', error);
         return [];
@@ -288,7 +297,7 @@ export const useTopPicks = () => {
     }
   });
 
-  // New - Vote on a top pick (upvote or downvote)
+  // Vote on a top pick (upvote or downvote) using direct SQL queries
   const voteOnTopPick = useMutation({
     mutationFn: async ({ 
       topPickId, 
@@ -300,80 +309,46 @@ export const useTopPicks = () => {
       try {
         const userId = await getOrCreateAnonymousId();
         
-        // Check if user has already voted on this top pick
-        const { data: existingVote } = await supabase
-          .from('top_pick_votes')
-          .select('*')
-          .eq('user_id', userId)
-          .eq('top_pick_id', topPickId)
-          .maybeSingle();
-          
+        // First, check if the user has already voted on this top pick
+        const { data: existingVote, error: selectError } = await supabase
+          .rpc('get_user_vote', { pick_id: topPickId, user_identifier: userId })
+          .single();
+        
+        if (selectError && selectError.message !== 'No rows returned') {
+          throw selectError;
+        }
+        
         // If there's an existing vote of the same type, remove it (toggle)
         if (existingVote && existingVote.vote_type === voteType) {
-          // Remove the vote
-          await supabase
-            .from('top_pick_votes')
-            .delete()
-            .eq('id', existingVote.id);
-            
-          // Update the top pick vote counts
-          const updateData = voteType === 'upvote' 
-            ? { upvotes: supabase.rpc('decrement', { x: 1 }) }
-            : { downvotes: supabase.rpc('decrement', { x: 1 }) };
-            
-          await supabase
-            .from('top_picks')
-            .update(updateData)
-            .eq('id', topPickId);
-            
+          // Remove the vote using RPC
+          await supabase.rpc('remove_vote', { 
+            pick_id: topPickId, 
+            user_identifier: userId,
+            vote_direction: voteType 
+          });
+          
           return { action: 'removed', voteType };
         } 
         // If there's an existing vote of the opposite type, change it
         else if (existingVote) {
-          // Update the vote type
-          await supabase
-            .from('top_pick_votes')
-            .update({ vote_type: voteType })
-            .eq('id', existingVote.id);
-            
-          // Update the top pick vote counts (decrement the old type, increment the new type)
-          const oldType = existingVote.vote_type === 'upvote' ? 'upvotes' : 'downvotes';
-          const newType = voteType === 'upvote' ? 'upvotes' : 'downvotes';
+          // Change the vote using RPC
+          await supabase.rpc('change_vote', { 
+            pick_id: topPickId, 
+            user_identifier: userId,
+            new_vote_type: voteType 
+          });
           
-          // This is a bit tricky with Supabase, so doing it in two operations
-          await supabase
-            .from('top_picks')
-            .update({ [oldType]: supabase.rpc('decrement', { x: 1 }) })
-            .eq('id', topPickId);
-            
-          await supabase
-            .from('top_picks')
-            .update({ [newType]: supabase.rpc('increment', { x: 1 }) })
-            .eq('id', topPickId);
-            
           return { action: 'changed', voteType };
         } 
         // If there's no existing vote, add a new one
         else {
-          // Insert new vote
-          await supabase
-            .from('top_pick_votes')
-            .insert({
-              user_id: userId,
-              top_pick_id: topPickId,
-              vote_type: voteType
-            });
-            
-          // Update the top pick vote count
-          const updateData = voteType === 'upvote' 
-            ? { upvotes: supabase.rpc('increment', { x: 1 }) }
-            : { downvotes: supabase.rpc('increment', { x: 1 }) };
-            
-          await supabase
-            .from('top_picks')
-            .update(updateData)
-            .eq('id', topPickId);
-            
+          // Add a new vote using RPC
+          await supabase.rpc('add_vote', { 
+            pick_id: topPickId, 
+            user_identifier: userId,
+            vote_direction: voteType 
+          });
+          
           return { action: 'added', voteType };
         }
       } catch (error) {
