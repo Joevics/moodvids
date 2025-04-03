@@ -1,6 +1,6 @@
 
 import { useTopPicks, TopPickItem } from "@/hooks/useTopPicks";
-import { Loader2, Star, Calendar, MessageSquare, SlidersHorizontal, AlertCircle, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Loader2, Star, Calendar, MessageSquare, SlidersHorizontal, AlertCircle, ThumbsUp, ThumbsDown, Bookmark, CheckCheck, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,6 +13,9 @@ import { GenreSelector } from "@/components/GenreSelector";
 import { Genre, TimePeriod } from "@/types/movie";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
+import { useWatchlist } from "@/hooks/useWatchlist";
+import { useWatchHistory } from "@/hooks/useWatchHistory";
+import { toast } from "sonner";
 
 interface TopPickCardProps {
   topPick: TopPickItem;
@@ -21,7 +24,15 @@ interface TopPickCardProps {
 const TopPickCard = ({ topPick }: TopPickCardProps) => {
   const navigate = useNavigate();
   const { voteOnTopPick, getUserVoteType } = useTopPicks();
+  const { isInWatchlist, toggleWatchlist } = useWatchlist();
+  const { isMovieWatched, toggleWatch } = useWatchHistory();
   const userVoteType = getUserVoteType(topPick.id);
+  const [expanded, setExpanded] = useState(false);
+  
+  // Check if the comment is long enough to need a "read more" button
+  const shouldTruncate = topPick.comment && topPick.comment.length > 120;
+  const isInUserWatchlist = isInWatchlist(topPick.movie_id);
+  const isWatched = isMovieWatched(topPick.movie_id);
 
   const handleCardClick = () => {
     navigate(`/movie/${topPick.movie_id}`);
@@ -30,6 +41,42 @@ const TopPickCard = ({ topPick }: TopPickCardProps) => {
   const handleVote = (voteType: 'upvote' | 'downvote') => (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent triggering the card click
     voteOnTopPick.mutate({ topPickId: topPick.id, voteType });
+  };
+  
+  const handleWatchlistToggle = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering the card click
+    
+    const movieObject = {
+      id: topPick.movie_id,
+      title: topPick.movie_title,
+      release_date: topPick.release_year ? `${topPick.release_year}-01-01` : "",
+      poster_path: null,
+      genres: topPick.genres?.map(genre => ({ id: 0, name: genre })) || []
+    };
+    
+    toggleWatchlist.mutate({ 
+      movie: movieObject, 
+      isInWatchlist: isInUserWatchlist 
+    });
+  };
+  
+  const handleWatchedToggle = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering the card click
+    
+    const movieObject = {
+      id: topPick.movie_id,
+      title: topPick.movie_title,
+      release_date: topPick.release_year ? `${topPick.release_year}-01-01` : "",
+      poster_path: null,
+      genres: topPick.genres?.map(genre => ({ id: 0, name: genre })) || []
+    };
+    
+    toggleWatch.mutate({ movie: movieObject, isWatched });
+  };
+  
+  const toggleExpanded = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering the card click
+    setExpanded(!expanded);
   };
   
   return (
@@ -118,11 +165,59 @@ const TopPickCard = ({ topPick }: TopPickCardProps) => {
                   <MessageSquare className="w-4 h-4 mr-1" />
                   <span className="text-sm font-medium">Comment:</span>
                 </div>
-                <p className="text-sm text-muted-foreground line-clamp-3 italic">
+                <p className={cn(
+                  "text-sm text-muted-foreground italic", 
+                  !expanded && shouldTruncate && "line-clamp-3"
+                )}>
                   "{topPick.comment}"
                 </p>
+                
+                {shouldTruncate && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={toggleExpanded}
+                    className="mt-1 p-0 h-6 text-xs flex gap-1 items-center text-muted-foreground hover:text-foreground"
+                  >
+                    {expanded ? (
+                      <>
+                        <ChevronUp className="h-3 w-3" />
+                        <span>Show less</span>
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="h-3 w-3" />
+                        <span>Read more</span>
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             )}
+            
+            <div className="mt-3 flex gap-2">
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={handleWatchlistToggle}
+                className="h-8 w-8 rounded-full"
+                title={isInUserWatchlist ? "Remove from watchlist" : "Add to watchlist"}
+              >
+                <Bookmark className="h-4 w-4" fill={isInUserWatchlist ? "currentColor" : "none"} />
+                <span className="sr-only">{isInUserWatchlist ? "Remove from watchlist" : "Add to watchlist"}</span>
+              </Button>
+              
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={handleWatchedToggle}
+                className="h-8 w-8 rounded-full"
+                title={isWatched ? "Mark as unwatched" : "Mark as watched"}
+              >
+                <CheckCheck className="h-4 w-4" stroke={isWatched ? "green" : "currentColor"} strokeWidth={isWatched ? 3 : 2} />
+                <span className="sr-only">{isWatched ? "Mark as unwatched" : "Mark as watched"}</span>
+              </Button>
+            </div>
           </div>
         </div>
       </div>

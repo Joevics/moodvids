@@ -35,7 +35,6 @@ export const useTopPicks = () => {
     queryKey: ['topPicks'],
     queryFn: async () => {
       try {
-        // Fetch all top picks (they're public according to RLS)
         const { data, error } = await supabase
           .from('top_picks')
           .select('*')
@@ -43,12 +42,10 @@ export const useTopPicks = () => {
 
         if (error) throw error;
 
-        // Check for missing trailers and fetch them if needed
         const picksWithTrailers = await Promise.all((data as TopPickItem[] || []).map(async (pick) => {
           if (!pick.trailer_key) {
             const trailer = await fetchMovieTrailer(pick.movie_id);
             if (trailer) {
-              // Update the trailer key in the database
               await supabase
                 .from('top_picks')
                 .update({ trailer_key: trailer })
@@ -88,12 +85,10 @@ export const useTopPicks = () => {
 
         if (error) throw error;
 
-        // Check for missing trailers and fetch them if needed
         const picksWithTrailers = await Promise.all((data as TopPickItem[] || []).map(async (pick) => {
           if (!pick.trailer_key) {
             const trailer = await fetchMovieTrailer(pick.movie_id);
             if (trailer) {
-              // Update the trailer key in the database
               await supabase
                 .from('top_picks')
                 .update({ trailer_key: trailer })
@@ -113,14 +108,12 @@ export const useTopPicks = () => {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Get user votes to determine which picks the user has already voted on
   const { data: userVotes = [] } = useQuery({
     queryKey: ['userVotes'],
     queryFn: async () => {
       try {
         const userId = await getOrCreateAnonymousId();
         
-        // Using raw SQL query as a workaround for type issues
         const { data, error } = await supabase
           .from('top_pick_votes')
           .select('*')
@@ -142,7 +135,6 @@ export const useTopPicks = () => {
       );
       const data = await response.json();
       
-      // First try to find an official trailer
       let trailer = data.results?.find(
         (video: any) => 
           video.type === "Trailer" && 
@@ -150,7 +142,6 @@ export const useTopPicks = () => {
           video.official === true
       );
       
-      // If no official trailer, look for any trailer
       if (!trailer) {
         trailer = data.results?.find(
           (video: any) => 
@@ -159,7 +150,6 @@ export const useTopPicks = () => {
         );
       }
       
-      // If no trailer, look for a teaser
       if (!trailer) {
         trailer = data.results?.find(
           (video: any) => 
@@ -186,14 +176,12 @@ export const useTopPicks = () => {
       comment?: string 
     }) => {
       try {
-        // Extract release year from date if available
         const releaseYear = movie.release_date 
           ? movie.release_date.substring(0, 4)
           : "";
         
         const userId = await getOrCreateAnonymousId();
         
-        // Get trailer key directly from movie if available or fetch it
         let trailerKey = movie.trailer_key;
         
         if (!trailerKey) {
@@ -296,7 +284,6 @@ export const useTopPicks = () => {
     }
   });
 
-  // Vote on a top pick (upvote or downvote) using direct SQL queries
   const voteOnTopPick = useMutation({
     mutationFn: async ({ 
       topPickId, 
@@ -308,65 +295,78 @@ export const useTopPicks = () => {
       try {
         const userId = await getOrCreateAnonymousId();
         
-        // First, check if the user has already voted on this top pick
-        const { data: existingVote, error: selectError } = await supabase
-          .rpc('get_user_vote', { pick_id: topPickId, user_identifier: userId })
+        const { data: existingVotes, error: selectError } = await supabase
+          .rpc('get_user_vote', { 
+            pick_id: topPickId, 
+            user_identifier: userId 
+          })
           .select('*')
           .single();
         
-        if (selectError && selectError.message !== 'No rows returned') {
+        if (selectError && selectError.code === 'PGRST116') {
+          console.log('No existing vote found, adding new vote');
+          const { error: addError } = await supabase
+            .rpc('add_vote', { 
+              pick_id: topPickId, 
+              user_identifier: userId,
+              vote_direction: voteType 
+            });
+          
+          if (addError) throw addError;
+          return { action: 'added', voteType };
+        } else if (selectError) {
           throw selectError;
         }
         
-        // If there's an existing vote of the same type, remove it (toggle)
+        const existingVote = existingVotes as unknown as { id: string; vote_type: string };
+        
         if (existingVote && existingVote.vote_type === voteType) {
-          // Remove the vote using RPC
-          await supabase.rpc('remove_vote', { 
-            pick_id: topPickId, 
-            user_identifier: userId,
-            vote_direction: voteType 
-          });
+          const { error: removeError } = await supabase
+            .rpc('remove_vote', { 
+              pick_id: topPickId, 
+              user_identifier: userId,
+              vote_direction: voteType 
+            });
           
+          if (removeError) throw removeError;
           return { action: 'removed', voteType };
-        } 
-        // If there's an existing vote of the opposite type, change it
-        else if (existingVote) {
-          // Change the vote using RPC
-          await supabase.rpc('change_vote', { 
-            pick_id: topPickId, 
-            user_identifier: userId,
-            new_vote_type: voteType 
-          });
+        } else if (existingVote) {
+          const { error: changeError } = await supabase
+            .rpc('change_vote', { 
+              pick_id: topPickId, 
+              user_identifier: userId,
+              new_vote_type: voteType 
+            });
           
+          if (changeError) throw changeError;
           return { action: 'changed', voteType };
-        } 
-        // If there's no existing vote, add a new one
-        else {
-          // Add a new vote using RPC
-          await supabase.rpc('add_vote', { 
-            pick_id: topPickId, 
-            user_identifier: userId,
-            vote_direction: voteType 
-          });
-          
-          return { action: 'added', voteType };
         }
+        
+        return { action: 'unknown', voteType };
       } catch (error) {
         console.error('Error voting on top pick:', error);
         throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['topPicks'] });
       queryClient.invalidateQueries({ queryKey: ['userTopPicks'] });
       queryClient.invalidateQueries({ queryKey: ['userVotes'] });
+      
+      if (result.action === 'added') {
+        toast.success(`${result.voteType === 'upvote' ? 'Upvoted' : 'Downvoted'} successfully`);
+      } else if (result.action === 'removed') {
+        toast.success(`${result.voteType === 'upvote' ? 'Upvote' : 'Downvote'} removed`);
+      } else if (result.action === 'changed') {
+        toast.success(`Changed to ${result.voteType === 'upvote' ? 'upvote' : 'downvote'}`);
+      }
     },
     onError: (error) => {
+      console.error('Vote error:', error);
       toast.error('Failed to vote on Top Pick');
     }
   });
 
-  // Check if user has already voted on a top pick
   const getUserVoteType = (topPickId: string): 'upvote' | 'downvote' | null => {
     const vote = userVotes.find(v => v.top_pick_id === topPickId);
     return vote ? vote.vote_type as 'upvote' | 'downvote' : null;

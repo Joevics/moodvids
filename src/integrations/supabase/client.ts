@@ -11,9 +11,12 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 
 // Create a custom typed client that includes the functions we need for voting
 type SupabaseClientWithFunctions = ReturnType<typeof createClient<Database>> & {
-  rpc: (fn: string, params?: Record<string, any>) => {
+  rpc: <T = any>(
+    fn: string, 
+    params?: Record<string, any>
+  ) => {
     select: (column: string) => {
-      single: () => Promise<{ data: any; error: any }>
+      single: () => Promise<{ data: T; error: any }>
     }
   }
 };
