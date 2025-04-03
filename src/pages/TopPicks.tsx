@@ -1,4 +1,3 @@
-
 import { useTopPicks, TopPickItem } from "@/hooks/useTopPicks";
 import { Loader2, Star, Calendar, MessageSquare, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
@@ -12,12 +11,19 @@ import { TimePeriodSelector } from "@/components/TimePeriodSelector";
 import { GenreSelector } from "@/components/GenreSelector";
 import { Genre, TimePeriod } from "@/types/movie";
 import { Card } from "@/components/ui/card";
+import { useNavigate } from "react-router-dom";
 
 interface TopPickCardProps {
   topPick: TopPickItem;
 }
 
 const TopPickCard = ({ topPick }: TopPickCardProps) => {
+  const navigate = useNavigate();
+
+  const handleCardClick = () => {
+    navigate(`/movie/${topPick.movie_id}`);
+  };
+  
   return (
     <Card className="overflow-hidden transition-shadow hover:shadow-lg">
       <div className="grid grid-cols-1 gap-4 h-auto">
@@ -41,7 +47,12 @@ const TopPickCard = ({ topPick }: TopPickCardProps) => {
         <div className="p-3 flex flex-col justify-between">
           <div>
             <div className="flex items-start justify-between gap-2 mb-1">
-              <h3 className="text-base font-semibold line-clamp-2">{topPick.movie_title}</h3>
+              <h3 
+                className="text-base font-semibold line-clamp-2 cursor-pointer hover:text-primary transition-colors" 
+                onClick={handleCardClick}
+              >
+                {topPick.movie_title}
+              </h3>
             </div>
             
             <div className="flex items-center gap-3 mb-2 text-sm text-muted-foreground">
@@ -85,7 +96,6 @@ const TopPicks = () => {
   const [sortOption, setSortOption] = useState<SortOption>("newest");
   const [showFilters, setShowFilters] = useState(false);
   
-  // Filter and sort functions
   const filterByGenre = (pick: TopPickItem) => {
     if (selectedGenres.length === 0) return true;
     return pick.genres?.some(genre => selectedGenres.includes(genre as Genre)) || false;
@@ -131,7 +141,6 @@ const TopPicks = () => {
     setShowFilters(false);
   };
   
-  // Apply filters and sorting
   const filteredCommunityPicks = topPicks
     .filter(filterByGenre)
     .filter(filterByPeriod)
@@ -142,7 +151,6 @@ const TopPicks = () => {
     .filter(filterByPeriod)
     .sort(sortPicks);
 
-  // Toggle genre selection
   const handleGenreSelect = (genre: Genre) => {
     setSelectedGenres(prev => 
       prev.includes(genre) 
@@ -151,7 +159,6 @@ const TopPicks = () => {
     );
   };
 
-  // Handle period selection
   const handlePeriodSelect = (period: TimePeriod) => {
     setSelectedPeriod(prev => prev === period ? undefined : period);
   };
