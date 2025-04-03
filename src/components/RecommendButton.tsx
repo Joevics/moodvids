@@ -64,8 +64,15 @@ export const RecommendButton = ({ movie, className, size = "sm", variant = "outl
     }
 
     try {
+      // Make sure we're passing the movie with the trailer key if available
+      const movieWithTrailer = {
+        ...movie,
+        // If the movie has a trailer_key, it will be used
+        // If not, the addTopPick function will fetch it
+      };
+      
       await addTopPick.mutateAsync({
-        movie,
+        movie: movieWithTrailer,
         rating,
         comment: comment.trim() || undefined
       });

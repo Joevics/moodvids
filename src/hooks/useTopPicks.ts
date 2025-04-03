@@ -33,7 +33,24 @@ export const useTopPicks = () => {
           .order('created_at', { ascending: false });
 
         if (error) throw error;
-        return data as TopPickItem[] || [];
+
+        // Check for missing trailers and fetch them if needed
+        const picksWithTrailers = await Promise.all((data as TopPickItem[] || []).map(async (pick) => {
+          if (!pick.trailer_key) {
+            const trailer = await fetchMovieTrailer(pick.movie_id);
+            if (trailer) {
+              // Update the trailer key in the database
+              await supabase
+                .from('top_picks')
+                .update({ trailer_key: trailer })
+                .eq('id', pick.id);
+              return { ...pick, trailer_key: trailer };
+            }
+          }
+          return pick;
+        }));
+        
+        return picksWithTrailers as TopPickItem[] || [];
       } catch (error) {
         console.error('Error fetching top picks:', error);
         return [];
@@ -61,7 +78,24 @@ export const useTopPicks = () => {
           .order('created_at', { ascending: false });
 
         if (error) throw error;
-        return data as TopPickItem[] || [];
+
+        // Check for missing trailers and fetch them if needed
+        const picksWithTrailers = await Promise.all((data as TopPickItem[] || []).map(async (pick) => {
+          if (!pick.trailer_key) {
+            const trailer = await fetchMovieTrailer(pick.movie_id);
+            if (trailer) {
+              // Update the trailer key in the database
+              await supabase
+                .from('top_picks')
+                .update({ trailer_key: trailer })
+                .eq('id', pick.id);
+              return { ...pick, trailer_key: trailer };
+            }
+          }
+          return pick;
+        }));
+        
+        return picksWithTrailers as TopPickItem[] || [];
       } catch (error) {
         console.error('Error fetching user top picks:', error);
         return [];
@@ -69,6 +103,46 @@ export const useTopPicks = () => {
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  const fetchMovieTrailer = async (movieId: number): Promise<string | null> => {
+    try {
+      const response = await fetch(
+        `https://api.themoviedb.org/3/movie/${movieId}/videos?api_key=1cf50e6248dc270629e802686245c2c8`
+      );
+      const data = await response.json();
+      
+      // First try to find an official trailer
+      let trailer = data.results?.find(
+        (video: any) => 
+          video.type === "Trailer" && 
+          video.site === "YouTube" &&
+          video.official === true
+      );
+      
+      // If no official trailer, look for any trailer
+      if (!trailer) {
+        trailer = data.results?.find(
+          (video: any) => 
+            video.type === "Trailer" && 
+            video.site === "YouTube"
+        );
+      }
+      
+      // If no trailer, look for a teaser
+      if (!trailer) {
+        trailer = data.results?.find(
+          (video: any) => 
+            video.type === "Teaser" && 
+            video.site === "YouTube"
+        );
+      }
+      
+      return trailer ? trailer.key : null;
+    } catch (error) {
+      console.error("Failed to fetch trailer for movie ID:", movieId, error);
+      return null;
+    }
+  };
 
   const addTopPick = useMutation({
     mutationFn: async ({ 
@@ -88,6 +162,13 @@ export const useTopPicks = () => {
         
         const userId = await getOrCreateAnonymousId();
         
+        // Get trailer key directly from movie if available or fetch it
+        let trailerKey = movie.trailer_key;
+        
+        if (!trailerKey) {
+          trailerKey = await fetchMovieTrailer(movie.id);
+        }
+        
         const { data, error } = await supabase
           .from('top_picks')
           .insert({
@@ -97,7 +178,7 @@ export const useTopPicks = () => {
             release_year: releaseYear,
             rating,
             comment,
-            trailer_key: movie.trailer_key,
+            trailer_key: trailerKey,
             genres: movie.genres
           })
           .select()
@@ -195,6 +276,7 @@ export const useTopPicks = () => {
     addTopPick,
     updateTopPick,
     deleteTopPick,
-    isMovieInTopPicks
+    isMovieInTopPicks,
+    fetchMovieTrailer
   };
 };

@@ -66,7 +66,38 @@ const MovieDetails = () => {
             await fetchTrailer(movieId);
           }
         } else {
-          toast.error('Movie not found');
+          try {
+            const response = await fetch(
+              `https://api.themoviedb.org/3/movie/${movieId}?api_key=1cf50e6248dc270629e802686245c2c8&language=en-US`
+            );
+            if (response.ok) {
+              const movieData = await response.json();
+              
+              const formattedMovie: Movie = {
+                id: movieData.id,
+                title: movieData.title,
+                overview: movieData.overview,
+                poster_path: movieData.poster_path,
+                release_date: movieData.release_date,
+                vote_average: movieData.vote_average / 2,
+                genres: movieData.genres?.map((g: {id: number, name: string}) => g.name) || []
+              };
+              
+              setMovie(formattedMovie);
+              
+              if (formattedMovie.release_date) {
+                const yearMatch = formattedMovie.release_date.match(/^\d{4}/);
+                setYear(yearMatch ? yearMatch[0] : "");
+              }
+              
+              await fetchTrailer(movieId);
+            } else {
+              toast.error('Movie not found');
+            }
+          } catch (error) {
+            console.error("Error fetching movie from TMDB:", error);
+            toast.error('Failed to load movie details');
+          }
         }
       } catch (error) {
         console.error('Error fetching movie details:', error);
@@ -160,12 +191,10 @@ const MovieDetails = () => {
       
       toast.success(newWatchedState ? 'Added to watched' : 'Removed from watched');
       
-      // If added to watch history, remove from recommendations
       if (newWatchedState) {
         await removeRecommendation.mutateAsync(movie.id);
       }
       
-      // Navigate back if the user came from recommendations
       if (document.referrer.includes('/recommendations')) {
         navigate('/recommendations');
       }
@@ -187,12 +216,10 @@ const MovieDetails = () => {
       
       toast.success(newWatchlistState ? 'Added to watchlist' : 'Removed from watchlist');
       
-      // If added to watchlist, remove from recommendations
       if (newWatchlistState) {
         await removeRecommendation.mutateAsync(movie.id);
       }
       
-      // Navigate back if the user came from recommendations
       if (document.referrer.includes('/recommendations')) {
         navigate('/recommendations');
       }

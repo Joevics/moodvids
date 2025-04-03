@@ -1,5 +1,6 @@
+
 import { useTopPicks, TopPickItem } from "@/hooks/useTopPicks";
-import { Loader2, Star, Calendar, MessageSquare, SlidersHorizontal } from "lucide-react";
+import { Loader2, Star, Calendar, MessageSquare, SlidersHorizontal, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -40,7 +41,10 @@ const TopPickCard = ({ topPick }: TopPickCardProps) => {
           </div>
         ) : (
           <div className="aspect-video w-full bg-muted flex items-center justify-center text-muted-foreground">
-            No trailer available
+            <div className="flex flex-col items-center gap-2">
+              <AlertCircle className="w-8 h-8" />
+              <span>Loading trailer...</span>
+            </div>
           </div>
         )}
         
