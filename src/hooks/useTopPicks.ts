@@ -17,6 +17,8 @@ export interface TopPickItem {
   trailer_key?: string;
   genres?: string[];
   created_at: string;
+  upvotes: number;
+  downvotes: number;
 }
 
 export const useTopPicks = () => {
@@ -102,6 +104,27 @@ export const useTopPicks = () => {
       }
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Get user votes to determine which picks the user has already voted on
+  const { data: userVotes = [] } = useQuery({
+    queryKey: ['userVotes'],
+    queryFn: async () => {
+      try {
+        const userId = await getOrCreateAnonymousId();
+        
+        const { data, error } = await supabase
+          .from('top_pick_votes')
+          .select('*')
+          .eq('user_id', userId);
+          
+        if (error) throw error;
+        return data || [];
+      } catch (error) {
+        console.error('Error fetching user votes:', error);
+        return [];
+      }
+    }
   });
 
   const fetchMovieTrailer = async (movieId: number): Promise<string | null> => {
@@ -265,6 +288,115 @@ export const useTopPicks = () => {
     }
   });
 
+  // New - Vote on a top pick (upvote or downvote)
+  const voteOnTopPick = useMutation({
+    mutationFn: async ({ 
+      topPickId, 
+      voteType 
+    }: { 
+      topPickId: string, 
+      voteType: 'upvote' | 'downvote'
+    }) => {
+      try {
+        const userId = await getOrCreateAnonymousId();
+        
+        // Check if user has already voted on this top pick
+        const { data: existingVote } = await supabase
+          .from('top_pick_votes')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('top_pick_id', topPickId)
+          .maybeSingle();
+          
+        // If there's an existing vote of the same type, remove it (toggle)
+        if (existingVote && existingVote.vote_type === voteType) {
+          // Remove the vote
+          await supabase
+            .from('top_pick_votes')
+            .delete()
+            .eq('id', existingVote.id);
+            
+          // Update the top pick vote counts
+          const updateData = voteType === 'upvote' 
+            ? { upvotes: supabase.rpc('decrement', { x: 1 }) }
+            : { downvotes: supabase.rpc('decrement', { x: 1 }) };
+            
+          await supabase
+            .from('top_picks')
+            .update(updateData)
+            .eq('id', topPickId);
+            
+          return { action: 'removed', voteType };
+        } 
+        // If there's an existing vote of the opposite type, change it
+        else if (existingVote) {
+          // Update the vote type
+          await supabase
+            .from('top_pick_votes')
+            .update({ vote_type: voteType })
+            .eq('id', existingVote.id);
+            
+          // Update the top pick vote counts (decrement the old type, increment the new type)
+          const oldType = existingVote.vote_type === 'upvote' ? 'upvotes' : 'downvotes';
+          const newType = voteType === 'upvote' ? 'upvotes' : 'downvotes';
+          
+          // This is a bit tricky with Supabase, so doing it in two operations
+          await supabase
+            .from('top_picks')
+            .update({ [oldType]: supabase.rpc('decrement', { x: 1 }) })
+            .eq('id', topPickId);
+            
+          await supabase
+            .from('top_picks')
+            .update({ [newType]: supabase.rpc('increment', { x: 1 }) })
+            .eq('id', topPickId);
+            
+          return { action: 'changed', voteType };
+        } 
+        // If there's no existing vote, add a new one
+        else {
+          // Insert new vote
+          await supabase
+            .from('top_pick_votes')
+            .insert({
+              user_id: userId,
+              top_pick_id: topPickId,
+              vote_type: voteType
+            });
+            
+          // Update the top pick vote count
+          const updateData = voteType === 'upvote' 
+            ? { upvotes: supabase.rpc('increment', { x: 1 }) }
+            : { downvotes: supabase.rpc('increment', { x: 1 }) };
+            
+          await supabase
+            .from('top_picks')
+            .update(updateData)
+            .eq('id', topPickId);
+            
+          return { action: 'added', voteType };
+        }
+      } catch (error) {
+        console.error('Error voting on top pick:', error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['topPicks'] });
+      queryClient.invalidateQueries({ queryKey: ['userTopPicks'] });
+      queryClient.invalidateQueries({ queryKey: ['userVotes'] });
+    },
+    onError: (error) => {
+      toast.error('Failed to vote on Top Pick');
+    }
+  });
+
+  // Check if user has already voted on a top pick
+  const getUserVoteType = (topPickId: string): 'upvote' | 'downvote' | null => {
+    const vote = userVotes.find(v => v.top_pick_id === topPickId);
+    return vote ? vote.vote_type as 'upvote' | 'downvote' : null;
+  };
+
   const isMovieInTopPicks = (movieId: number) => {
     return userTopPicks.some(item => item.movie_id === movieId);
   };
@@ -277,6 +409,8 @@ export const useTopPicks = () => {
     updateTopPick,
     deleteTopPick,
     isMovieInTopPicks,
-    fetchMovieTrailer
+    fetchMovieTrailer,
+    voteOnTopPick,
+    getUserVoteType
   };
 };

@@ -1,6 +1,6 @@
 
 import { useTopPicks, TopPickItem } from "@/hooks/useTopPicks";
-import { Loader2, Star, Calendar, MessageSquare, SlidersHorizontal, AlertCircle } from "lucide-react";
+import { Loader2, Star, Calendar, MessageSquare, SlidersHorizontal, AlertCircle, ThumbsUp, ThumbsDown } from "lucide-react";
 import { useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -20,9 +20,16 @@ interface TopPickCardProps {
 
 const TopPickCard = ({ topPick }: TopPickCardProps) => {
   const navigate = useNavigate();
+  const { voteOnTopPick, getUserVoteType } = useTopPicks();
+  const userVoteType = getUserVoteType(topPick.id);
 
   const handleCardClick = () => {
     navigate(`/movie/${topPick.movie_id}`);
+  };
+
+  const handleVote = (voteType: 'upvote' | 'downvote') => (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering the card click
+    voteOnTopPick.mutate({ topPickId: topPick.id, voteType });
   };
   
   return (
@@ -57,6 +64,38 @@ const TopPickCard = ({ topPick }: TopPickCardProps) => {
               >
                 {topPick.movie_title}
               </h3>
+              
+              <div className="flex items-center gap-1">
+                <Button
+                  size="icon"
+                  variant={userVoteType === 'upvote' ? 'default' : 'ghost'}
+                  onClick={handleVote('upvote')}
+                  className={cn(
+                    "h-8 w-8 rounded-full", 
+                    userVoteType === 'upvote' ? 'bg-green-500 hover:bg-green-600' : 'hover:bg-green-100'
+                  )}
+                  disabled={voteOnTopPick.isPending}
+                >
+                  <ThumbsUp className="h-4 w-4" />
+                  <span className="sr-only">Upvote</span>
+                </Button>
+                <span className="text-sm font-medium">{topPick.upvotes}</span>
+                
+                <Button
+                  size="icon"
+                  variant={userVoteType === 'downvote' ? 'default' : 'ghost'}
+                  onClick={handleVote('downvote')}
+                  className={cn(
+                    "h-8 w-8 rounded-full ml-1", 
+                    userVoteType === 'downvote' ? 'bg-red-500 hover:bg-red-600' : 'hover:bg-red-100'
+                  )}
+                  disabled={voteOnTopPick.isPending}
+                >
+                  <ThumbsDown className="h-4 w-4" />
+                  <span className="sr-only">Downvote</span>
+                </Button>
+                <span className="text-sm font-medium">{topPick.downvotes}</span>
+              </div>
             </div>
             
             <div className="flex items-center gap-3 mb-2 text-sm text-muted-foreground">
@@ -91,7 +130,7 @@ const TopPickCard = ({ topPick }: TopPickCardProps) => {
   );
 };
 
-type SortOption = "newest" | "oldest" | "rating";
+type SortOption = "newest" | "oldest" | "rating" | "most_upvoted";
 
 const TopPicks = () => {
   const { topPicks, userTopPicks, isLoading } = useTopPicks();
@@ -133,6 +172,8 @@ const TopPicks = () => {
         return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
       case "rating":
         return b.rating - a.rating;
+      case "most_upvoted":
+        return b.upvotes - a.upvotes;
       default:
         return 0;
     }
@@ -197,6 +238,7 @@ const TopPicks = () => {
                   <ToggleGroupItem value="newest">Newest</ToggleGroupItem>
                   <ToggleGroupItem value="oldest">Oldest</ToggleGroupItem>
                   <ToggleGroupItem value="rating">Highest Rated</ToggleGroupItem>
+                  <ToggleGroupItem value="most_upvoted">Most Upvoted</ToggleGroupItem>
                 </ToggleGroup>
               </div>
               

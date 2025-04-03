@@ -54,10 +54,43 @@ export type Database = {
         }
         Relationships: []
       }
+      top_pick_votes: {
+        Row: {
+          created_at: string
+          id: string
+          top_pick_id: string
+          user_id: string
+          vote_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          top_pick_id: string
+          user_id: string
+          vote_type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          top_pick_id?: string
+          user_id?: string
+          vote_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "top_pick_votes_top_pick_id_fkey"
+            columns: ["top_pick_id"]
+            isOneToOne: false
+            referencedRelation: "top_picks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       top_picks: {
         Row: {
           comment: string | null
           created_at: string
+          downvotes: number
           genres: string[] | null
           id: string
           movie_id: number
@@ -65,11 +98,13 @@ export type Database = {
           rating: number
           release_year: string
           trailer_key: string | null
+          upvotes: number
           user_id: string
         }
         Insert: {
           comment?: string | null
           created_at?: string
+          downvotes?: number
           genres?: string[] | null
           id?: string
           movie_id: number
@@ -77,11 +112,13 @@ export type Database = {
           rating: number
           release_year: string
           trailer_key?: string | null
+          upvotes?: number
           user_id: string
         }
         Update: {
           comment?: string | null
           created_at?: string
+          downvotes?: number
           genres?: string[] | null
           id?: string
           movie_id?: number
@@ -89,6 +126,7 @@ export type Database = {
           rating?: number
           release_year?: string
           trailer_key?: string | null
+          upvotes?: number
           user_id?: string
         }
         Relationships: []
