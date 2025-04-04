@@ -66,17 +66,53 @@ export const voteOnTopPick = async (
         throw insertError;
       }
       
-      // Update the counters directly
+      // Update the counters directly without using RPC
       if (voteType === 'upvote') {
-        await supabase
+        // Get current upvotes count
+        const { data: currentData, error: getError } = await supabase
           .from('top_picks')
-          .update({ upvotes: supabase.rpc('increment', { i: 1, x: 1 }) })
+          .select('upvotes')
+          .eq('id', topPickId)
+          .single();
+          
+        if (getError) {
+          console.error("Error getting current upvotes:", getError);
+          throw getError;
+        }
+        
+        // Update with incremented value
+        const { error: updateError } = await supabase
+          .from('top_picks')
+          .update({ upvotes: (currentData?.upvotes || 0) + 1 })
           .eq('id', topPickId);
+          
+        if (updateError) {
+          console.error("Error updating upvotes:", updateError);
+          throw updateError;
+        }
       } else {
-        await supabase
+        // Get current downvotes count
+        const { data: currentData, error: getError } = await supabase
           .from('top_picks')
-          .update({ downvotes: supabase.rpc('increment', { i: 1, x: 1 }) })
+          .select('downvotes')
+          .eq('id', topPickId)
+          .single();
+          
+        if (getError) {
+          console.error("Error getting current downvotes:", getError);
+          throw getError;
+        }
+        
+        // Update with incremented value
+        const { error: updateError } = await supabase
+          .from('top_picks')
+          .update({ downvotes: (currentData?.downvotes || 0) + 1 })
           .eq('id', topPickId);
+          
+        if (updateError) {
+          console.error("Error updating downvotes:", updateError);
+          throw updateError;
+        }
       }
       
       return { action: 'added', voteType };
@@ -98,17 +134,53 @@ export const voteOnTopPick = async (
         throw deleteError;
       }
       
-      // Update the counters directly
+      // Update the counters directly without using RPC
       if (voteType === 'upvote') {
-        await supabase
+        // Get current upvotes count
+        const { data: currentData, error: getError } = await supabase
           .from('top_picks')
-          .update({ upvotes: supabase.rpc('decrement', { i: 1, x: 1 }) })
+          .select('upvotes')
+          .eq('id', topPickId)
+          .single();
+          
+        if (getError) {
+          console.error("Error getting current upvotes:", getError);
+          throw getError;
+        }
+        
+        // Update with decremented value
+        const { error: updateError } = await supabase
+          .from('top_picks')
+          .update({ upvotes: Math.max(0, (currentData?.upvotes || 0) - 1) })
           .eq('id', topPickId);
+          
+        if (updateError) {
+          console.error("Error updating upvotes:", updateError);
+          throw updateError;
+        }
       } else {
-        await supabase
+        // Get current downvotes count
+        const { data: currentData, error: getError } = await supabase
           .from('top_picks')
-          .update({ downvotes: supabase.rpc('decrement', { i: 1, x: 1 }) })
+          .select('downvotes')
+          .eq('id', topPickId)
+          .single();
+          
+        if (getError) {
+          console.error("Error getting current downvotes:", getError);
+          throw getError;
+        }
+        
+        // Update with decremented value
+        const { error: updateError } = await supabase
+          .from('top_picks')
+          .update({ downvotes: Math.max(0, (currentData?.downvotes || 0) - 1) })
           .eq('id', topPickId);
+          
+        if (updateError) {
+          console.error("Error updating downvotes:", updateError);
+          throw updateError;
+        }
       }
       
       return { action: 'removed', voteType };
@@ -127,23 +199,47 @@ export const voteOnTopPick = async (
       throw updateError;
     }
     
-    // Update both counters
+    // Update both counters directly without using RPC
+    // Get current counts
+    const { data: currentData, error: getError } = await supabase
+      .from('top_picks')
+      .select('upvotes, downvotes')
+      .eq('id', topPickId)
+      .single();
+      
+    if (getError) {
+      console.error("Error getting current vote counts:", getError);
+      throw getError;
+    }
+    
     if (voteType === 'upvote') {
-      await supabase
+      // Switching from downvote to upvote
+      const { error: updateCountsError } = await supabase
         .from('top_picks')
         .update({ 
-          upvotes: supabase.rpc('increment', { i: 1, x: 1 }),
-          downvotes: supabase.rpc('decrement', { i: 1, x: 1 })
+          upvotes: (currentData?.upvotes || 0) + 1,
+          downvotes: Math.max(0, (currentData?.downvotes || 0) - 1)
         })
         .eq('id', topPickId);
+        
+      if (updateCountsError) {
+        console.error("Error updating vote counts:", updateCountsError);
+        throw updateCountsError;
+      }
     } else {
-      await supabase
+      // Switching from upvote to downvote
+      const { error: updateCountsError } = await supabase
         .from('top_picks')
         .update({ 
-          downvotes: supabase.rpc('increment', { i: 1, x: 1 }),
-          upvotes: supabase.rpc('decrement', { i: 1, x: 1 })
+          downvotes: (currentData?.downvotes || 0) + 1,
+          upvotes: Math.max(0, (currentData?.upvotes || 0) - 1)
         })
         .eq('id', topPickId);
+        
+      if (updateCountsError) {
+        console.error("Error updating vote counts:", updateCountsError);
+        throw updateCountsError;
+      }
     }
     
     return { action: 'changed', voteType };
@@ -152,3 +248,4 @@ export const voteOnTopPick = async (
     throw error;
   }
 };
+
