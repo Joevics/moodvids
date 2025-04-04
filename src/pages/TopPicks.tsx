@@ -1,4 +1,3 @@
-
 import { useTopPicks, TopPickItem } from "@/hooks/useTopPicks";
 import { Loader2, Star, Calendar, MessageSquare, SlidersHorizontal, AlertCircle, ThumbsUp, ThumbsDown, Bookmark, CheckCheck, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
@@ -49,9 +48,11 @@ const TopPickCard = ({ topPick }: TopPickCardProps) => {
     const movieObject = {
       id: topPick.movie_id,
       title: topPick.movie_title,
+      overview: "", // Adding missing required properties
+      poster_path: "",
       release_date: topPick.release_year ? `${topPick.release_year}-01-01` : "",
-      poster_path: null,
-      genres: topPick.genres?.map(genre => ({ id: 0, name: genre })) || []
+      vote_average: topPick.rating * 2, // Convert 5-star to 10-point scale
+      genres: topPick.genres || []
     };
     
     toggleWatchlist.mutate({ 
@@ -66,9 +67,11 @@ const TopPickCard = ({ topPick }: TopPickCardProps) => {
     const movieObject = {
       id: topPick.movie_id,
       title: topPick.movie_title,
+      overview: "", // Adding missing required properties
+      poster_path: "",
       release_date: topPick.release_year ? `${topPick.release_year}-01-01` : "",
-      poster_path: null,
-      genres: topPick.genres?.map(genre => ({ id: 0, name: genre })) || []
+      vote_average: topPick.rating * 2, // Convert 5-star to 10-point scale
+      genres: topPick.genres || []
     };
     
     toggleWatch.mutate({ movie: movieObject, isWatched });
