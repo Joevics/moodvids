@@ -1,5 +1,5 @@
 import { useTopPicks, TopPickItem } from "@/hooks/useTopPicks";
-import { Loader2, Star, Calendar, MessageSquare, SlidersHorizontal, AlertCircle, ThumbsUp, ThumbsDown, Bookmark, CheckCheck, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, Star, Calendar, MessageSquare, SlidersHorizontal, AlertCircle, ThumbsUp, ThumbsDown, Bookmark, CheckCheck, ChevronDown, ChevronUp, Eye, Plus } from "lucide-react";
 import { useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,6 +15,8 @@ import { useNavigate } from "react-router-dom";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { useWatchHistory } from "@/hooks/useWatchHistory";
 import { toast } from "sonner";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { RecommendButton } from "@/components/RecommendButton";
 
 interface TopPickCardProps {
   topPick: TopPickItem;
@@ -42,44 +44,20 @@ const TopPickCard = ({ topPick }: TopPickCardProps) => {
     voteOnTopPick.mutate({ topPickId: topPick.id, voteType });
   };
   
-  const handleWatchlistToggle = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent triggering the card click
-    
-    const movieObject = {
-      id: topPick.movie_id,
-      title: topPick.movie_title,
-      overview: "", // Adding missing required properties
-      poster_path: "",
-      release_date: topPick.release_year ? `${topPick.release_year}-01-01` : "",
-      vote_average: topPick.rating * 2, // Convert 5-star to 10-point scale
-      genres: topPick.genres || []
-    };
-    
-    toggleWatchlist.mutate({ 
-      movie: movieObject, 
-      isInWatchlist: isInUserWatchlist 
-    });
-  };
-  
-  const handleWatchedToggle = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent triggering the card click
-    
-    const movieObject = {
-      id: topPick.movie_id,
-      title: topPick.movie_title,
-      overview: "", // Adding missing required properties
-      poster_path: "",
-      release_date: topPick.release_year ? `${topPick.release_year}-01-01` : "",
-      vote_average: topPick.rating * 2, // Convert 5-star to 10-point scale
-      genres: topPick.genres || []
-    };
-    
-    toggleWatch.mutate({ movie: movieObject, isWatched });
-  };
-  
   const toggleExpanded = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent triggering the card click
     setExpanded(!expanded);
+  };
+  
+  // Create a movie object from the top pick data
+  const movieObject = {
+    id: topPick.movie_id,
+    title: topPick.movie_title,
+    overview: "", // Adding missing required properties
+    poster_path: "",
+    release_date: topPick.release_year ? `${topPick.release_year}-01-01` : "",
+    vote_average: topPick.rating * 2, // Convert 5-star to 10-point scale
+    genres: topPick.genres || []
   };
   
   return (
@@ -160,6 +138,59 @@ const TopPickCard = ({ topPick }: TopPickCardProps) => {
                   <span>{topPick.release_year}</span>
                 </div>
               )}
+              
+              {/* Added watchlist and watched icons copied from MovieCard */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={isWatched ? "default" : "outline"}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleWatch.mutateAsync({
+                          movie: movieObject,
+                          isWatched: !isWatched
+                        });
+                      }}
+                      disabled={toggleWatch.isPending}
+                      className="h-6 w-6 p-0"
+                      size="sm"
+                    >
+                      <Eye className="w-3 h-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{isWatched ? 'Remove from watched' : 'Add to watched'}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={isInUserWatchlist ? "default" : "outline"}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleWatchlist.mutateAsync({
+                          movie: movieObject,
+                          isInWatchlist: !isInUserWatchlist
+                        });
+                      }}
+                      disabled={toggleWatchlist.isPending}
+                      className="h-6 w-6 p-0"
+                      size="sm"
+                    >
+                      <Plus className="w-3 h-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{isInUserWatchlist ? 'Remove from watchlist' : 'Add to watchlist'}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
             
             {topPick.comment && (
@@ -197,30 +228,6 @@ const TopPickCard = ({ topPick }: TopPickCardProps) => {
                 )}
               </div>
             )}
-            
-            <div className="mt-3 flex gap-2">
-              <Button
-                size="icon"
-                variant="outline"
-                onClick={handleWatchlistToggle}
-                className="h-8 w-8 rounded-full"
-                title={isInUserWatchlist ? "Remove from watchlist" : "Add to watchlist"}
-              >
-                <Bookmark className="h-4 w-4" fill={isInUserWatchlist ? "currentColor" : "none"} />
-                <span className="sr-only">{isInUserWatchlist ? "Remove from watchlist" : "Add to watchlist"}</span>
-              </Button>
-              
-              <Button
-                size="icon"
-                variant="outline"
-                onClick={handleWatchedToggle}
-                className="h-8 w-8 rounded-full"
-                title={isWatched ? "Mark as unwatched" : "Mark as watched"}
-              >
-                <CheckCheck className="h-4 w-4" stroke={isWatched ? "green" : "currentColor"} strokeWidth={isWatched ? 3 : 2} />
-                <span className="sr-only">{isWatched ? "Mark as unwatched" : "Mark as watched"}</span>
-              </Button>
-            </div>
           </div>
         </div>
       </div>
