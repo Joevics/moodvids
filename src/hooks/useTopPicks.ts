@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -18,6 +19,7 @@ export interface TopPickItem {
   created_at: string;
   upvotes: number;
   downvotes: number;
+  poster_path?: string; // Added this property to fix the error
 }
 
 interface TopPickVote {
