@@ -40,6 +40,7 @@ const TopPickCard = ({ topPick }: TopPickCardProps) => {
 
   const handleVote = (voteType: 'upvote' | 'downvote') => (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent triggering the card click
+    console.log(`Attempting to ${voteType} for pick:`, topPick.id);
     voteOnTopPick.mutate({ topPickId: topPick.id, voteType });
   };
   

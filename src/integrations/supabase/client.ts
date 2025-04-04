@@ -10,18 +10,15 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // import { supabase } from "@/integrations/supabase/client";
 
 // Create a custom typed client that includes the functions we need for voting
-type SupabaseClientWithFunctions = ReturnType<typeof createClient<Database>> & {
-  rpc: <T = any>(
-    fn: string, 
-    params?: Record<string, any>
-  ) => {
-    select: (column: string) => {
-      single: () => Promise<{ data: T; error: any }>
-    }
-  }
-};
+type SupabaseClientWithFunctions = ReturnType<typeof createClient<Database>>;
 
 export const supabase = createClient<Database>(
   SUPABASE_URL, 
-  SUPABASE_PUBLISHABLE_KEY
+  SUPABASE_PUBLISHABLE_KEY,
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true
+    }
+  }
 ) as SupabaseClientWithFunctions;

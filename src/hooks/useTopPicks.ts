@@ -19,7 +19,7 @@ export interface TopPickItem {
   created_at: string;
   upvotes: number;
   downvotes: number;
-  poster_path?: string; // Added this property to fix the error
+  poster_path?: string;
 }
 
 interface TopPickVote {
@@ -114,14 +114,20 @@ export const useTopPicks = () => {
     queryKey: ['userVotes'],
     queryFn: async () => {
       try {
+        console.log("Fetching user votes...");
         const userId = await getOrCreateAnonymousId();
+        console.log("User ID for votes:", userId);
         
         const { data, error } = await supabase
           .from('top_pick_votes')
           .select('*')
           .eq('user_id', userId);
           
-        if (error) throw error;
+        if (error) {
+          console.error("Error fetching user votes:", error);
+          throw error;
+        }
+        console.log("User votes fetched:", data);
         return data as TopPickVote[] || [];
       } catch (error) {
         console.error('Error fetching user votes:', error);
@@ -295,18 +301,40 @@ export const useTopPicks = () => {
       voteType: 'upvote' | 'downvote'
     }) => {
       try {
+        console.log("Starting vote operation...", { topPickId, voteType });
         const userId = await getOrCreateAnonymousId();
+        console.log("User ID for voting:", userId);
         
+        console.log("Checking for existing vote...");
         const { data: existingVotes, error: selectError } = await supabase
           .rpc('get_user_vote', { 
             pick_id: topPickId, 
             user_identifier: userId 
-          })
-          .select('*')
-          .single();
+          });
+        
+        console.log("Existing vote check result:", { existingVotes, selectError });
         
         if (selectError && selectError.code === 'PGRST116') {
           console.log('No existing vote found, adding new vote');
+          const { data: addData, error: addError } = await supabase
+            .rpc('add_vote', { 
+              pick_id: topPickId, 
+              user_identifier: userId,
+              vote_direction: voteType 
+            });
+          
+          console.log("Add vote result:", { addData, addError });
+          if (addError) throw addError;
+          return { action: 'added', voteType };
+        } else if (selectError) {
+          console.error("Error checking for existing vote:", selectError);
+          throw selectError;
+        }
+        
+        console.log("Processing existing vote:", existingVotes);
+        // Handle case when existingVotes is not in expected format
+        if (!existingVotes || !Array.isArray(existingVotes) || existingVotes.length === 0) {
+          console.log("No existing vote found (empty array), adding new vote");
           const { error: addError } = await supabase
             .rpc('add_vote', { 
               pick_id: topPickId, 
@@ -316,13 +344,13 @@ export const useTopPicks = () => {
           
           if (addError) throw addError;
           return { action: 'added', voteType };
-        } else if (selectError) {
-          throw selectError;
         }
-        
-        const existingVote = existingVotes as unknown as { id: string; vote_type: string };
+
+        const existingVote = existingVotes[0];
+        console.log("Existing vote details:", existingVote);
         
         if (existingVote && existingVote.vote_type === voteType) {
+          console.log("Removing existing vote of same type");
           const { error: removeError } = await supabase
             .rpc('remove_vote', { 
               pick_id: topPickId, 
@@ -333,6 +361,7 @@ export const useTopPicks = () => {
           if (removeError) throw removeError;
           return { action: 'removed', voteType };
         } else if (existingVote) {
+          console.log("Changing vote type from", existingVote.vote_type, "to", voteType);
           const { error: changeError } = await supabase
             .rpc('change_vote', { 
               pick_id: topPickId, 
@@ -351,6 +380,7 @@ export const useTopPicks = () => {
       }
     },
     onSuccess: (result) => {
+      console.log("Vote operation successful:", result);
       queryClient.invalidateQueries({ queryKey: ['topPicks'] });
       queryClient.invalidateQueries({ queryKey: ['userTopPicks'] });
       queryClient.invalidateQueries({ queryKey: ['userVotes'] });
@@ -370,7 +400,10 @@ export const useTopPicks = () => {
   });
 
   const getUserVoteType = (topPickId: string): 'upvote' | 'downvote' | null => {
+    console.log("Checking vote type for pick:", topPickId);
+    console.log("Available votes:", userVotes);
     const vote = userVotes.find(v => v.top_pick_id === topPickId);
+    console.log("Found vote:", vote);
     return vote ? vote.vote_type as 'upvote' | 'downvote' : null;
   };
 
