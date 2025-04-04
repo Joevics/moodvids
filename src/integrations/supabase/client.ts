@@ -26,181 +26,15 @@ export const supabase = createClient<Database>(
   }
 ) as SupabaseClientWithFunctions;
 
-// Create a direct voting function to bypass RPC functions
-export const voteOnTopPick = async (
+// Simple counter function for upvotes and downvotes
+export const updateVoteCounter = async (
   topPickId: string, 
-  userId: string, 
   voteType: 'upvote' | 'downvote'
-): Promise<{ action: string, voteType: string }> => {
+): Promise<void> => {
   try {
-    console.log("Direct voting function called:", { topPickId, userId, voteType });
+    console.log("Simple vote counter called:", { topPickId, voteType });
     
-    // First check if user has already voted
-    const { data: existingVotes, error: checkError } = await supabase
-      .from('top_pick_votes')
-      .select('*')
-      .eq('top_pick_id', topPickId)
-      .eq('user_id', userId);
-    
-    console.log("Check existing votes result:", { existingVotes, checkError });
-    
-    if (checkError) {
-      console.error("Error checking for existing votes:", checkError);
-      throw checkError;
-    }
-    
-    // If no existing vote, add a new one
-    if (!existingVotes || existingVotes.length === 0) {
-      console.log("No existing vote, adding new vote");
-      
-      const { error: insertError } = await supabase
-        .from('top_pick_votes')
-        .insert({
-          top_pick_id: topPickId,
-          user_id: userId,
-          vote_type: voteType
-        });
-      
-      if (insertError) {
-        console.error("Error inserting vote:", insertError);
-        throw insertError;
-      }
-      
-      // Update the counters directly without using RPC
-      if (voteType === 'upvote') {
-        // Get current upvotes count
-        const { data: currentData, error: getError } = await supabase
-          .from('top_picks')
-          .select('upvotes')
-          .eq('id', topPickId)
-          .single();
-          
-        if (getError) {
-          console.error("Error getting current upvotes:", getError);
-          throw getError;
-        }
-        
-        // Update with incremented value
-        const { error: updateError } = await supabase
-          .from('top_picks')
-          .update({ upvotes: (currentData?.upvotes || 0) + 1 })
-          .eq('id', topPickId);
-          
-        if (updateError) {
-          console.error("Error updating upvotes:", updateError);
-          throw updateError;
-        }
-      } else {
-        // Get current downvotes count
-        const { data: currentData, error: getError } = await supabase
-          .from('top_picks')
-          .select('downvotes')
-          .eq('id', topPickId)
-          .single();
-          
-        if (getError) {
-          console.error("Error getting current downvotes:", getError);
-          throw getError;
-        }
-        
-        // Update with incremented value
-        const { error: updateError } = await supabase
-          .from('top_picks')
-          .update({ downvotes: (currentData?.downvotes || 0) + 1 })
-          .eq('id', topPickId);
-          
-        if (updateError) {
-          console.error("Error updating downvotes:", updateError);
-          throw updateError;
-        }
-      }
-      
-      return { action: 'added', voteType };
-    }
-    
-    const existingVote = existingVotes[0];
-    
-    // If the user is voting the same way, remove the vote
-    if (existingVote.vote_type === voteType) {
-      console.log("Removing existing vote of same type");
-      
-      const { error: deleteError } = await supabase
-        .from('top_pick_votes')
-        .delete()
-        .eq('id', existingVote.id);
-      
-      if (deleteError) {
-        console.error("Error deleting vote:", deleteError);
-        throw deleteError;
-      }
-      
-      // Update the counters directly without using RPC
-      if (voteType === 'upvote') {
-        // Get current upvotes count
-        const { data: currentData, error: getError } = await supabase
-          .from('top_picks')
-          .select('upvotes')
-          .eq('id', topPickId)
-          .single();
-          
-        if (getError) {
-          console.error("Error getting current upvotes:", getError);
-          throw getError;
-        }
-        
-        // Update with decremented value
-        const { error: updateError } = await supabase
-          .from('top_picks')
-          .update({ upvotes: Math.max(0, (currentData?.upvotes || 0) - 1) })
-          .eq('id', topPickId);
-          
-        if (updateError) {
-          console.error("Error updating upvotes:", updateError);
-          throw updateError;
-        }
-      } else {
-        // Get current downvotes count
-        const { data: currentData, error: getError } = await supabase
-          .from('top_picks')
-          .select('downvotes')
-          .eq('id', topPickId)
-          .single();
-          
-        if (getError) {
-          console.error("Error getting current downvotes:", getError);
-          throw getError;
-        }
-        
-        // Update with decremented value
-        const { error: updateError } = await supabase
-          .from('top_picks')
-          .update({ downvotes: Math.max(0, (currentData?.downvotes || 0) - 1) })
-          .eq('id', topPickId);
-          
-        if (updateError) {
-          console.error("Error updating downvotes:", updateError);
-          throw updateError;
-        }
-      }
-      
-      return { action: 'removed', voteType };
-    }
-    
-    // If the user is changing their vote type
-    console.log("Changing vote type from", existingVote.vote_type, "to", voteType);
-    
-    const { error: updateError } = await supabase
-      .from('top_pick_votes')
-      .update({ vote_type: voteType })
-      .eq('id', existingVote.id);
-    
-    if (updateError) {
-      console.error("Error updating vote:", updateError);
-      throw updateError;
-    }
-    
-    // Update both counters directly without using RPC
-    // Get current counts
+    // Get current vote counts
     const { data: currentData, error: getError } = await supabase
       .from('top_picks')
       .select('upvotes, downvotes')
@@ -212,40 +46,32 @@ export const voteOnTopPick = async (
       throw getError;
     }
     
+    // Update with incremented value for the appropriate counter
     if (voteType === 'upvote') {
-      // Switching from downvote to upvote
-      const { error: updateCountsError } = await supabase
+      const { error: updateError } = await supabase
         .from('top_picks')
-        .update({ 
-          upvotes: (currentData?.upvotes || 0) + 1,
-          downvotes: Math.max(0, (currentData?.downvotes || 0) - 1)
-        })
+        .update({ upvotes: (currentData?.upvotes || 0) + 1 })
         .eq('id', topPickId);
         
-      if (updateCountsError) {
-        console.error("Error updating vote counts:", updateCountsError);
-        throw updateCountsError;
+      if (updateError) {
+        console.error("Error updating upvotes:", updateError);
+        throw updateError;
       }
     } else {
-      // Switching from upvote to downvote
-      const { error: updateCountsError } = await supabase
+      const { error: updateError } = await supabase
         .from('top_picks')
-        .update({ 
-          downvotes: (currentData?.downvotes || 0) + 1,
-          upvotes: Math.max(0, (currentData?.upvotes || 0) - 1)
-        })
+        .update({ downvotes: (currentData?.downvotes || 0) + 1 })
         .eq('id', topPickId);
         
-      if (updateCountsError) {
-        console.error("Error updating vote counts:", updateCountsError);
-        throw updateCountsError;
+      if (updateError) {
+        console.error("Error updating downvotes:", updateError);
+        throw updateError;
       }
     }
     
-    return { action: 'changed', voteType };
+    console.log(`Successfully incremented ${voteType} counter`);
   } catch (error) {
-    console.error("Error in direct voting function:", error);
+    console.error("Error in vote counter function:", error);
     throw error;
   }
 };
-

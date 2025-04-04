@@ -1,6 +1,5 @@
-
 import { useTopPicks, TopPickItem } from "@/hooks/useTopPicks";
-import { Loader2, Star, Calendar, MessageSquare, SlidersHorizontal, AlertCircle, ThumbsUp, ThumbsDown, Bookmark, CheckCheck, ChevronDown, ChevronUp, Eye, Plus } from "lucide-react";
+import { Loader2, Star, Calendar, MessageSquare, SlidersHorizontal, AlertCircle, ThumbsUp, ThumbsDown, ChevronDown, ChevronUp, Eye, Plus } from "lucide-react";
 import { useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,10 +24,9 @@ interface TopPickCardProps {
 
 const TopPickCard = ({ topPick }: TopPickCardProps) => {
   const navigate = useNavigate();
-  const { voteOnTopPick, getUserVoteType } = useTopPicks();
+  const { voteOnTopPick } = useTopPicks();
   const { toggleWatchlist, isInWatchlist } = useWatchlist();
   const { toggleWatch, isMovieWatched } = useWatchHistory();
-  const userVoteType = getUserVoteType(topPick.id);
   const [expanded, setExpanded] = useState(false);
   
   // Check if the comment is long enough to need a "read more" button
@@ -40,7 +38,7 @@ const TopPickCard = ({ topPick }: TopPickCardProps) => {
 
   const handleVote = (voteType: 'upvote' | 'downvote') => (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent triggering the card click
-    console.log(`Attempting to ${voteType} for pick:`, topPick.id);
+    console.log(`Simple ${voteType} clicked for pick:`, topPick.id);
     voteOnTopPick.mutate({ topPickId: topPick.id, voteType });
   };
   
@@ -85,12 +83,9 @@ const TopPickCard = ({ topPick }: TopPickCardProps) => {
               <div className="flex items-center gap-1">
                 <Button
                   size="icon"
-                  variant={userVoteType === 'upvote' ? 'default' : 'ghost'}
+                  variant="ghost"
                   onClick={handleVote('upvote')}
-                  className={cn(
-                    "h-8 w-8 rounded-full", 
-                    userVoteType === 'upvote' ? 'bg-green-500 hover:bg-green-600' : 'hover:bg-green-100'
-                  )}
+                  className="h-8 w-8 rounded-full hover:bg-green-100"
                   disabled={voteOnTopPick.isPending}
                 >
                   <ThumbsUp className="h-4 w-4" />
@@ -100,12 +95,9 @@ const TopPickCard = ({ topPick }: TopPickCardProps) => {
                 
                 <Button
                   size="icon"
-                  variant={userVoteType === 'downvote' ? 'default' : 'ghost'}
+                  variant="ghost"
                   onClick={handleVote('downvote')}
-                  className={cn(
-                    "h-8 w-8 rounded-full ml-1", 
-                    userVoteType === 'downvote' ? 'bg-red-500 hover:bg-red-600' : 'hover:bg-red-100'
-                  )}
+                  className="h-8 w-8 rounded-full ml-1 hover:bg-red-100"
                   disabled={voteOnTopPick.isPending}
                 >
                   <ThumbsDown className="h-4 w-4" />

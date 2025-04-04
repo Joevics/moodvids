@@ -1,5 +1,6 @@
+
 import { useState } from "react";
-import { supabase, voteOnTopPick as directVoteOnTopPick } from "@/integrations/supabase/client";
+import { supabase, updateVoteCounter } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getOrCreateAnonymousId } from "@/lib/anonymousUser";
 import { Movie } from "@/types/movie";
@@ -19,14 +20,6 @@ export interface TopPickItem {
   upvotes: number;
   downvotes: number;
   poster_path?: string;
-}
-
-interface TopPickVote {
-  id: string;
-  user_id: string;
-  top_pick_id: string;
-  vote_type: 'upvote' | 'downvote';
-  created_at: string;
 }
 
 export const useTopPicks = () => {
@@ -107,32 +100,6 @@ export const useTopPicks = () => {
       }
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-
-  const { data: userVotes = [] } = useQuery({
-    queryKey: ['userVotes'],
-    queryFn: async () => {
-      try {
-        console.log("Fetching user votes...");
-        const userId = await getOrCreateAnonymousId();
-        console.log("User ID for votes:", userId);
-        
-        const { data, error } = await supabase
-          .from('top_pick_votes')
-          .select('*')
-          .eq('user_id', userId);
-          
-        if (error) {
-          console.error("Error fetching user votes:", error);
-          throw error;
-        }
-        console.log("User votes fetched:", data);
-        return data as TopPickVote[] || [];
-      } catch (error) {
-        console.error('Error fetching user votes:', error);
-        return [];
-      }
-    }
   });
 
   const fetchMovieTrailer = async (movieId: number): Promise<string | null> => {
@@ -291,6 +258,7 @@ export const useTopPicks = () => {
     }
   });
 
+  // Simplified vote counter mutation
   const voteOnTopPick = useMutation({
     mutationFn: async ({ 
       topPickId, 
@@ -300,16 +268,11 @@ export const useTopPicks = () => {
       voteType: 'upvote' | 'downvote'
     }) => {
       try {
-        console.log("Starting direct vote operation...", { topPickId, voteType });
-        const userId = await getOrCreateAnonymousId();
-        console.log("User ID for voting:", userId);
-        
-        const result = await directVoteOnTopPick(topPickId, userId, voteType);
-        console.log("Direct vote result:", result);
-        
-        return result;
+        console.log("Simple vote counter called from hook:", { topPickId, voteType });
+        await updateVoteCounter(topPickId, voteType);
+        return { success: true, voteType };
       } catch (error) {
-        console.error('Error voting on top pick:', error);
+        console.error('Error updating vote counter:', error);
         throw error;
       }
     },
@@ -317,29 +280,13 @@ export const useTopPicks = () => {
       console.log("Vote operation successful:", result);
       queryClient.invalidateQueries({ queryKey: ['topPicks'] });
       queryClient.invalidateQueries({ queryKey: ['userTopPicks'] });
-      queryClient.invalidateQueries({ queryKey: ['userVotes'] });
-      
-      if (result.action === 'added') {
-        toast.success(`${result.voteType === 'upvote' ? 'Upvoted' : 'Downvoted'} successfully`);
-      } else if (result.action === 'removed') {
-        toast.success(`${result.voteType === 'upvote' ? 'Upvote' : 'Downvote'} removed`);
-      } else if (result.action === 'changed') {
-        toast.success(`Changed to ${result.voteType === 'upvote' ? 'upvote' : 'downvote'}`);
-      }
+      toast.success(`Thanks for your ${result.voteType}`);
     },
     onError: (error) => {
       console.error('Vote error:', error);
-      toast.error('Failed to vote on Top Pick');
+      toast.error('Failed to count your vote');
     }
   });
-
-  const getUserVoteType = (topPickId: string): 'upvote' | 'downvote' | null => {
-    console.log("Checking vote type for pick:", topPickId);
-    console.log("Available votes:", userVotes);
-    const vote = userVotes.find(v => v.top_pick_id === topPickId);
-    console.log("Found vote:", vote);
-    return vote ? vote.vote_type as 'upvote' | 'downvote' : null;
-  };
 
   const isMovieInTopPicks = (movieId: number) => {
     return userTopPicks.some(item => item.movie_id === movieId);
@@ -355,6 +302,7 @@ export const useTopPicks = () => {
     isMovieInTopPicks,
     fetchMovieTrailer,
     voteOnTopPick,
-    getUserVoteType
+    // Simple function that always returns null since we're not tracking user votes anymore
+    getUserVoteType: () => null
   };
 };
