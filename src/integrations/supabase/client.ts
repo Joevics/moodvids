@@ -6,9 +6,6 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://ucdskpmaqrzavtgvvwar.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjZHNrcG1hcXJ6YXZ0Z3Z2d2FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkxODE2NDAsImV4cCI6MjA1NDc1NzY0MH0.Sm_uX3HL9r9hbZXclAbCzqIokVWAtO5pJXUimUs-Wgc";
 
-// Import the supabase client like this:
-// import { supabase } from "@/integrations/supabase/client";
-
 // Create a custom typed client that includes the functions we need for voting
 type SupabaseClientWithFunctions = ReturnType<typeof createClient<Database>>;
 
@@ -18,7 +15,140 @@ export const supabase = createClient<Database>(
   {
     auth: {
       persistSession: true,
-      autoRefreshToken: true
+      autoRefreshToken: true,
+      storage: localStorage
+    },
+    global: {
+      headers: {
+        'Content-Type': 'application/json'
+      }
     }
   }
 ) as SupabaseClientWithFunctions;
+
+// Create a direct voting function to bypass RPC functions
+export const voteOnTopPick = async (
+  topPickId: string, 
+  userId: string, 
+  voteType: 'upvote' | 'downvote'
+): Promise<{ action: string, voteType: string }> => {
+  try {
+    console.log("Direct voting function called:", { topPickId, userId, voteType });
+    
+    // First check if user has already voted
+    const { data: existingVotes, error: checkError } = await supabase
+      .from('top_pick_votes')
+      .select('*')
+      .eq('top_pick_id', topPickId)
+      .eq('user_id', userId);
+    
+    console.log("Check existing votes result:", { existingVotes, checkError });
+    
+    if (checkError) {
+      console.error("Error checking for existing votes:", checkError);
+      throw checkError;
+    }
+    
+    // If no existing vote, add a new one
+    if (!existingVotes || existingVotes.length === 0) {
+      console.log("No existing vote, adding new vote");
+      
+      const { error: insertError } = await supabase
+        .from('top_pick_votes')
+        .insert({
+          top_pick_id: topPickId,
+          user_id: userId,
+          vote_type: voteType
+        });
+      
+      if (insertError) {
+        console.error("Error inserting vote:", insertError);
+        throw insertError;
+      }
+      
+      // Update the counters directly
+      if (voteType === 'upvote') {
+        await supabase
+          .from('top_picks')
+          .update({ upvotes: supabase.rpc('increment', { i: 1, x: 1 }) })
+          .eq('id', topPickId);
+      } else {
+        await supabase
+          .from('top_picks')
+          .update({ downvotes: supabase.rpc('increment', { i: 1, x: 1 }) })
+          .eq('id', topPickId);
+      }
+      
+      return { action: 'added', voteType };
+    }
+    
+    const existingVote = existingVotes[0];
+    
+    // If the user is voting the same way, remove the vote
+    if (existingVote.vote_type === voteType) {
+      console.log("Removing existing vote of same type");
+      
+      const { error: deleteError } = await supabase
+        .from('top_pick_votes')
+        .delete()
+        .eq('id', existingVote.id);
+      
+      if (deleteError) {
+        console.error("Error deleting vote:", deleteError);
+        throw deleteError;
+      }
+      
+      // Update the counters directly
+      if (voteType === 'upvote') {
+        await supabase
+          .from('top_picks')
+          .update({ upvotes: supabase.rpc('decrement', { i: 1, x: 1 }) })
+          .eq('id', topPickId);
+      } else {
+        await supabase
+          .from('top_picks')
+          .update({ downvotes: supabase.rpc('decrement', { i: 1, x: 1 }) })
+          .eq('id', topPickId);
+      }
+      
+      return { action: 'removed', voteType };
+    }
+    
+    // If the user is changing their vote type
+    console.log("Changing vote type from", existingVote.vote_type, "to", voteType);
+    
+    const { error: updateError } = await supabase
+      .from('top_pick_votes')
+      .update({ vote_type: voteType })
+      .eq('id', existingVote.id);
+    
+    if (updateError) {
+      console.error("Error updating vote:", updateError);
+      throw updateError;
+    }
+    
+    // Update both counters
+    if (voteType === 'upvote') {
+      await supabase
+        .from('top_picks')
+        .update({ 
+          upvotes: supabase.rpc('increment', { i: 1, x: 1 }),
+          downvotes: supabase.rpc('decrement', { i: 1, x: 1 })
+        })
+        .eq('id', topPickId);
+    } else {
+      await supabase
+        .from('top_picks')
+        .update({ 
+          downvotes: supabase.rpc('increment', { i: 1, x: 1 }),
+          upvotes: supabase.rpc('decrement', { i: 1, x: 1 })
+        })
+        .eq('id', topPickId);
+    }
+    
+    return { action: 'changed', voteType };
+  } catch (error) {
+    console.error("Error in direct voting function:", error);
+    throw error;
+  }
+};

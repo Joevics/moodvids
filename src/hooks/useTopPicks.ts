@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, voteOnTopPick as directVoteOnTopPick } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getOrCreateAnonymousId } from "@/lib/anonymousUser";
 import { Movie } from "@/types/movie";
@@ -301,79 +300,14 @@ export const useTopPicks = () => {
       voteType: 'upvote' | 'downvote'
     }) => {
       try {
-        console.log("Starting vote operation...", { topPickId, voteType });
+        console.log("Starting direct vote operation...", { topPickId, voteType });
         const userId = await getOrCreateAnonymousId();
         console.log("User ID for voting:", userId);
         
-        console.log("Checking for existing vote...");
-        const { data: existingVotes, error: selectError } = await supabase
-          .rpc('get_user_vote', { 
-            pick_id: topPickId, 
-            user_identifier: userId 
-          });
+        const result = await directVoteOnTopPick(topPickId, userId, voteType);
+        console.log("Direct vote result:", result);
         
-        console.log("Existing vote check result:", { existingVotes, selectError });
-        
-        if (selectError && selectError.code === 'PGRST116') {
-          console.log('No existing vote found, adding new vote');
-          const { data: addData, error: addError } = await supabase
-            .rpc('add_vote', { 
-              pick_id: topPickId, 
-              user_identifier: userId,
-              vote_direction: voteType 
-            });
-          
-          console.log("Add vote result:", { addData, addError });
-          if (addError) throw addError;
-          return { action: 'added', voteType };
-        } else if (selectError) {
-          console.error("Error checking for existing vote:", selectError);
-          throw selectError;
-        }
-        
-        console.log("Processing existing vote:", existingVotes);
-        // Handle case when existingVotes is not in expected format
-        if (!existingVotes || !Array.isArray(existingVotes) || existingVotes.length === 0) {
-          console.log("No existing vote found (empty array), adding new vote");
-          const { error: addError } = await supabase
-            .rpc('add_vote', { 
-              pick_id: topPickId, 
-              user_identifier: userId,
-              vote_direction: voteType 
-            });
-          
-          if (addError) throw addError;
-          return { action: 'added', voteType };
-        }
-
-        const existingVote = existingVotes[0];
-        console.log("Existing vote details:", existingVote);
-        
-        if (existingVote && existingVote.vote_type === voteType) {
-          console.log("Removing existing vote of same type");
-          const { error: removeError } = await supabase
-            .rpc('remove_vote', { 
-              pick_id: topPickId, 
-              user_identifier: userId,
-              vote_direction: voteType 
-            });
-          
-          if (removeError) throw removeError;
-          return { action: 'removed', voteType };
-        } else if (existingVote) {
-          console.log("Changing vote type from", existingVote.vote_type, "to", voteType);
-          const { error: changeError } = await supabase
-            .rpc('change_vote', { 
-              pick_id: topPickId, 
-              user_identifier: userId,
-              new_vote_type: voteType 
-            });
-          
-          if (changeError) throw changeError;
-          return { action: 'changed', voteType };
-        }
-        
-        return { action: 'unknown', voteType };
+        return result;
       } catch (error) {
         console.error('Error voting on top pick:', error);
         throw error;
