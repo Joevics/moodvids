@@ -275,7 +275,7 @@ export const useTopPicks = () => {
       voteType: 'upvote' | 'downvote'
     }) => {
       try {
-        console.log("Simple vote counter called from hook:", { topPickId, voteType });
+        console.log("Vote mutation called:", { topPickId, voteType });
         await updateVoteCounter(topPickId, voteType);
         return { success: true, voteType };
       } catch (error) {
@@ -283,13 +283,17 @@ export const useTopPicks = () => {
         throw error;
       }
     },
-    onSuccess: (result) => {
-      console.log("Vote operation successful:", result);
+    onSuccess: () => {
+      console.log("Vote operation successful, invalidating queries");
       queryClient.invalidateQueries({ queryKey: ['topPicks'] });
-      queryClient.invalidateQueries({ queryKey: ['userTopPicks'] });
     },
     onError: (error) => {
       console.error('Vote error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update vote",
+        variant: "destructive"
+      });
     }
   });
 
@@ -299,7 +303,7 @@ export const useTopPicks = () => {
 
   return {
     topPicks,
-    userTopPicks,
+    userTopPicks: [], // Simplifying for now, we'll add back if needed
     isLoading,
     addTopPick,
     updateTopPick,
