@@ -1,10 +1,8 @@
-
 import { useState } from "react";
 import { supabase, updateVoteCounter } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getOrCreateAnonymousId } from "@/lib/anonymousUser";
 import { Movie } from "@/types/movie";
-import { toast } from "sonner";
 
 export interface TopPickItem {
   id: string;
@@ -187,7 +185,6 @@ export const useTopPicks = () => {
     onSuccess: (newTopPick) => {
       queryClient.invalidateQueries({ queryKey: ['topPicks'] });
       queryClient.invalidateQueries({ queryKey: ['userTopPicks'] });
-      toast.success('Movie added to Top Picks');
     },
     onError: (error) => {
       toast.error('Failed to add to Top Picks');
@@ -226,7 +223,6 @@ export const useTopPicks = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['topPicks'] });
       queryClient.invalidateQueries({ queryKey: ['userTopPicks'] });
-      toast.success('Top Pick updated');
     },
     onError: (error) => {
       toast.error('Failed to update Top Pick');
@@ -251,14 +247,12 @@ export const useTopPicks = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['topPicks'] });
       queryClient.invalidateQueries({ queryKey: ['userTopPicks'] });
-      toast.success('Top Pick removed');
     },
     onError: (error) => {
       toast.error('Failed to remove Top Pick');
     }
   });
 
-  // Simplified vote counter mutation
   const voteOnTopPick = useMutation({
     mutationFn: async ({ 
       topPickId, 
@@ -280,11 +274,9 @@ export const useTopPicks = () => {
       console.log("Vote operation successful:", result);
       queryClient.invalidateQueries({ queryKey: ['topPicks'] });
       queryClient.invalidateQueries({ queryKey: ['userTopPicks'] });
-      toast.success(`Thanks for your ${result.voteType}`);
     },
     onError: (error) => {
       console.error('Vote error:', error);
-      toast.error('Failed to count your vote');
     }
   });
 
@@ -302,7 +294,6 @@ export const useTopPicks = () => {
     isMovieInTopPicks,
     fetchMovieTrailer,
     voteOnTopPick,
-    // Simple function that always returns null since we're not tracking user votes anymore
     getUserVoteType: () => null
   };
 };

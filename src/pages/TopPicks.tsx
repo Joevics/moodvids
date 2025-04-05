@@ -14,7 +14,6 @@ import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { useWatchHistory } from "@/hooks/useWatchHistory";
-import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { RecommendButton } from "@/components/RecommendButton";
 
@@ -27,10 +26,7 @@ const TopPickCard = ({ topPick }: TopPickCardProps) => {
   const { voteOnTopPick } = useTopPicks();
   const { toggleWatchlist, isInWatchlist } = useWatchlist();
   const { toggleWatch, isMovieWatched } = useWatchHistory();
-  const [expanded, setExpanded] = useState(false);
-  
-  // Check if the comment is long enough to need a "read more" button
-  const shouldTruncate = topPick.comment && topPick.comment.length > 120;
+  const [showComment, setShowComment] = useState(false);
   
   const handleCardClick = () => {
     navigate(`/movie/${topPick.movie_id}`);
@@ -42,9 +38,9 @@ const TopPickCard = ({ topPick }: TopPickCardProps) => {
     voteOnTopPick.mutate({ topPickId: topPick.id, voteType });
   };
   
-  const toggleExpanded = (e: React.MouseEvent) => {
+  const toggleComment = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent triggering the card click
-    setExpanded(!expanded);
+    setShowComment(!showComment);
   };
   
   return (
@@ -197,36 +193,23 @@ const TopPickCard = ({ topPick }: TopPickCardProps) => {
             
             {topPick.comment && (
               <div className="mt-2">
-                <div className="flex items-center mb-1">
-                  <MessageSquare className="w-4 h-4 mr-1" />
-                  <span className="text-sm font-medium">Comment:</span>
-                </div>
-                <p className={cn(
-                  "text-sm text-muted-foreground italic", 
-                  !expanded && shouldTruncate && "line-clamp-3"
-                )}>
-                  "{topPick.comment}"
-                </p>
-                
-                {shouldTruncate && (
+                <div className="flex items-center">
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    onClick={toggleExpanded}
-                    className="mt-1 p-0 h-6 text-xs flex gap-1 items-center text-muted-foreground hover:text-foreground"
+                    onClick={toggleComment}
+                    className="p-0 h-6 flex gap-1 items-center text-muted-foreground hover:text-foreground"
                   >
-                    {expanded ? (
-                      <>
-                        <ChevronUp className="h-3 w-3" />
-                        <span>Show less</span>
-                      </>
-                    ) : (
-                      <>
-                        <ChevronDown className="h-3 w-3" />
-                        <span>Read more</span>
-                      </>
-                    )}
+                    <MessageSquare className="w-4 h-4 mr-1" />
+                    <span className="text-sm">View comment</span>
+                    {showComment ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                   </Button>
+                </div>
+                
+                {showComment && (
+                  <p className="text-sm text-muted-foreground italic mt-2">
+                    "{topPick.comment}"
+                  </p>
                 )}
               </div>
             )}
@@ -280,7 +263,7 @@ const TopPicks = () => {
       case "rating":
         return b.rating - a.rating;
       case "most_upvoted":
-        return b.upvotes - a.upvotes;
+        return (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes);
       default:
         return 0;
     }
