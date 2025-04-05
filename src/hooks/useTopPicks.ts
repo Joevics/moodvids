@@ -3,6 +3,7 @@ import { supabase, updateVoteCounter } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getOrCreateAnonymousId } from "@/lib/anonymousUser";
 import { Movie } from "@/types/movie";
+import { toast } from "@/hooks/use-toast";
 
 export interface TopPickItem {
   id: string;
@@ -187,7 +188,11 @@ export const useTopPicks = () => {
       queryClient.invalidateQueries({ queryKey: ['userTopPicks'] });
     },
     onError: (error) => {
-      toast.error('Failed to add to Top Picks');
+      toast({
+        title: "Error",
+        description: 'Failed to add to Top Picks',
+        variant: "destructive"
+      });
     }
   });
 
@@ -225,7 +230,11 @@ export const useTopPicks = () => {
       queryClient.invalidateQueries({ queryKey: ['userTopPicks'] });
     },
     onError: (error) => {
-      toast.error('Failed to update Top Pick');
+      toast({
+        title: "Error",
+        description: 'Failed to update Top Pick',
+        variant: "destructive"
+      });
     }
   });
 
@@ -249,7 +258,11 @@ export const useTopPicks = () => {
       queryClient.invalidateQueries({ queryKey: ['userTopPicks'] });
     },
     onError: (error) => {
-      toast.error('Failed to remove Top Pick');
+      toast({
+        title: "Error",
+        description: 'Failed to remove Top Pick',
+        variant: "destructive"
+      });
     }
   });
 
