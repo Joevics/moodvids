@@ -1,3 +1,4 @@
+
 import { useTopPicks, TopPickItem } from "@/hooks/useTopPicks";
 import { Loader2, Star, Calendar, MessageSquare, SlidersHorizontal, AlertCircle, ThumbsUp, ThumbsDown, ChevronDown, ChevronUp, Eye, Plus } from "lucide-react";
 import { useState } from "react";
@@ -34,7 +35,7 @@ const TopPickCard = ({ topPick }: TopPickCardProps) => {
 
   const handleVote = (voteType: 'upvote' | 'downvote') => (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent triggering the card click
-    console.log(`Vote ${voteType} clicked for pick:`, topPick.id);
+    console.log(`Voting ${voteType} for pick:`, topPick.id);
     voteOnTopPick.mutate({ topPickId: topPick.id, voteType });
   };
   

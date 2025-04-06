@@ -26,31 +26,31 @@ export const supabase = createClient<Database>(
   }
 ) as SupabaseClientWithFunctions;
 
-// Simple counter function for upvotes and downvotes
+// Simple vote counter function for upvotes and downvotes
 export const updateVoteCounter = async (
   topPickId: string, 
   voteType: 'upvote' | 'downvote'
 ): Promise<void> => {
   try {
-    console.log("Simple vote counter called:", { topPickId, voteType });
+    console.log(`Updating vote counter for pick ${topPickId} with vote type ${voteType}`);
     
-    // Get current vote counts
-    const { data: currentData, error: getError } = await supabase
+    // Get the current pick to update its vote count
+    const { data: pick, error: getError } = await supabase
       .from('top_picks')
       .select('upvotes, downvotes')
       .eq('id', topPickId)
       .single();
       
     if (getError) {
-      console.error("Error getting current vote counts:", getError);
+      console.error("Error getting top pick:", getError);
       throw getError;
     }
     
-    // Update with incremented value for the appropriate counter
+    // Update with the new vote count
     if (voteType === 'upvote') {
       const { error: updateError } = await supabase
         .from('top_picks')
-        .update({ upvotes: (currentData?.upvotes || 0) + 1 })
+        .update({ upvotes: (pick?.upvotes || 0) + 1 })
         .eq('id', topPickId);
         
       if (updateError) {
@@ -60,7 +60,7 @@ export const updateVoteCounter = async (
     } else {
       const { error: updateError } = await supabase
         .from('top_picks')
-        .update({ downvotes: (currentData?.downvotes || 0) + 1 })
+        .update({ downvotes: (pick?.downvotes || 0) + 1 })
         .eq('id', topPickId);
         
       if (updateError) {

@@ -77,7 +77,7 @@ export const useTopPicks = () => {
           .order('created_at', { ascending: false });
 
         if (error) throw error;
-
+        
         const picksWithTrailers = await Promise.all((data as TopPickItem[] || []).map(async (pick) => {
           if (!pick.trailer_key) {
             const trailer = await fetchMovieTrailer(pick.movie_id);
@@ -275,16 +275,16 @@ export const useTopPicks = () => {
       voteType: 'upvote' | 'downvote'
     }) => {
       try {
-        console.log("Vote mutation called:", { topPickId, voteType });
+        console.log("Voting on top pick:", { topPickId, voteType });
         await updateVoteCounter(topPickId, voteType);
-        return { success: true, voteType };
+        return { success: true };
       } catch (error) {
-        console.error('Error updating vote counter:', error);
+        console.error('Error voting on top pick:', error);
         throw error;
       }
     },
     onSuccess: () => {
-      console.log("Vote operation successful, invalidating queries");
+      console.log("Vote successful, refreshing data");
       queryClient.invalidateQueries({ queryKey: ['topPicks'] });
     },
     onError: (error) => {
@@ -303,14 +303,13 @@ export const useTopPicks = () => {
 
   return {
     topPicks,
-    userTopPicks: [], // Simplifying for now, we'll add back if needed
+    userTopPicks,
     isLoading,
     addTopPick,
     updateTopPick,
     deleteTopPick,
     isMovieInTopPicks,
     fetchMovieTrailer,
-    voteOnTopPick,
-    getUserVoteType: () => null
+    voteOnTopPick
   };
 };
