@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { supabase, updateVoteCounter } from "@/integrations/supabase/client";
+import { supabase, updateVoteCount } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getOrCreateAnonymousId } from "@/lib/anonymousUser";
 import { Movie } from "@/types/movie";
@@ -275,23 +275,23 @@ export const useTopPicks = () => {
       voteType: 'upvote' | 'downvote'
     }) => {
       try {
-        console.log("Voting on top pick:", { topPickId, voteType });
-        await updateVoteCounter(topPickId, voteType);
+        console.log(`Updating ${voteType} count for pick:`, topPickId);
+        await updateVoteCount(topPickId, voteType);
         return { success: true };
       } catch (error) {
-        console.error('Error voting on top pick:', error);
+        console.error(`Error updating ${voteType} count:`, error);
         throw error;
       }
     },
     onSuccess: () => {
-      console.log("Vote successful, refreshing data");
+      console.log("Vote count updated, refreshing data");
       queryClient.invalidateQueries({ queryKey: ['topPicks'] });
     },
     onError: (error) => {
       console.error('Vote error:', error);
       toast({
         title: "Error",
-        description: "Failed to update vote",
+        description: "Failed to update vote count",
         variant: "destructive"
       });
     }

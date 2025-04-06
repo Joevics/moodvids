@@ -26,15 +26,15 @@ export const supabase = createClient<Database>(
   }
 ) as SupabaseClientWithFunctions;
 
-// Simple vote counter function for upvotes and downvotes
-export const updateVoteCounter = async (
+// Simple counter function for upvotes and downvotes
+export const updateVoteCount = async (
   topPickId: string, 
   voteType: 'upvote' | 'downvote'
 ): Promise<void> => {
   try {
-    console.log(`Updating vote counter for pick ${topPickId} with vote type ${voteType}`);
+    console.log(`Updating ${voteType} count for pick ${topPickId}`);
     
-    // Get the current pick to update its vote count
+    // Get the top pick to update
     const { data: pick, error: getError } = await supabase
       .from('top_picks')
       .select('upvotes, downvotes')
@@ -46,32 +46,24 @@ export const updateVoteCounter = async (
       throw getError;
     }
     
-    // Update with the new vote count
-    if (voteType === 'upvote') {
-      const { error: updateError } = await supabase
-        .from('top_picks')
-        .update({ upvotes: (pick?.upvotes || 0) + 1 })
-        .eq('id', topPickId);
-        
-      if (updateError) {
-        console.error("Error updating upvotes:", updateError);
-        throw updateError;
-      }
-    } else {
-      const { error: updateError } = await supabase
-        .from('top_picks')
-        .update({ downvotes: (pick?.downvotes || 0) + 1 })
-        .eq('id', topPickId);
-        
-      if (updateError) {
-        console.error("Error updating downvotes:", updateError);
-        throw updateError;
-      }
+    // Update the appropriate counter
+    const updateData = voteType === 'upvote' 
+      ? { upvotes: (pick?.upvotes || J0) + 1 }
+      : { downvotes: (pick?.downvotes || 0) + 1 };
+      
+    const { error: updateError } = await supabase
+      .from('top_picks')
+      .update(updateData)
+      .eq('id', topPickId);
+      
+    if (updateError) {
+      console.error(`Error updating ${voteType} count:`, updateError);
+      throw updateError;
     }
     
-    console.log(`Successfully incremented ${voteType} counter`);
+    console.log(`Successfully incremented ${voteType} count`);
   } catch (error) {
-    console.error("Error in vote counter function:", error);
+    console.error("Error in vote count function:", error);
     throw error;
   }
 };
