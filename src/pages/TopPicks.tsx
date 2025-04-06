@@ -1,6 +1,6 @@
 
 import { useTopPicks, TopPickItem } from "@/hooks/useTopPicks";
-import { Loader2, Star, Calendar, MessageSquare, SlidersHorizontal, AlertCircle, ThumbsUp, ThumbsDown, ChevronDown, ChevronUp, Eye, Plus } from "lucide-react";
+import { Loader2, Star, Calendar, MessageSquare, SlidersHorizontal, AlertCircle, ChevronDown, ChevronUp, Eye, Plus } from "lucide-react";
 import { useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,7 +24,7 @@ interface TopPickCardProps {
 
 const TopPickCard = ({ topPick }: TopPickCardProps) => {
   const navigate = useNavigate();
-  const { voteOnTopPick } = useTopPicks();
+  const { isUserTopPick } = useTopPicks();
   const { toggleWatchlist, isInWatchlist } = useWatchlist();
   const { toggleWatch, isMovieWatched } = useWatchHistory();
   const [showComment, setShowComment] = useState(false);
@@ -32,17 +32,27 @@ const TopPickCard = ({ topPick }: TopPickCardProps) => {
   const handleCardClick = () => {
     navigate(`/movie/${topPick.movie_id}`);
   };
-
-  const handleVote = (voteType: 'upvote' | 'downvote') => (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent triggering the card click
-    console.log(`Voting ${voteType} for pick:`, topPick.id);
-    voteOnTopPick.mutate({ topPickId: topPick.id, voteType });
-  };
   
   const toggleComment = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent triggering the card click
     setShowComment(!showComment);
   };
+
+  // Create a movie object from the top pick
+  const createMovieFromTopPick = () => {
+    return {
+      id: topPick.movie_id,
+      title: topPick.movie_title,
+      overview: "",
+      poster_path: topPick.poster_path || "",
+      release_date: topPick.release_year ? `${topPick.release_year}-01-01` : "",
+      vote_average: topPick.rating * 2,
+      genres: topPick.genres || []
+    };
+  };
+  
+  // Check if this pick was created by the current user
+  const isOwnPick = isUserTopPick(topPick.user_id);
   
   return (
     <Card className="overflow-hidden transition-shadow hover:shadow-lg">
@@ -76,32 +86,6 @@ const TopPickCard = ({ topPick }: TopPickCardProps) => {
               >
                 {topPick.movie_title}
               </h3>
-              
-              <div className="flex items-center gap-1">
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={handleVote('upvote')}
-                  className="h-8 w-8 rounded-full hover:bg-green-100"
-                  disabled={voteOnTopPick.isPending}
-                >
-                  <ThumbsUp className="h-4 w-4" />
-                  <span className="sr-only">Upvote</span>
-                </Button>
-                <span className="text-sm font-medium">{topPick.upvotes}</span>
-                
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={handleVote('downvote')}
-                  className="h-8 w-8 rounded-full ml-1 hover:bg-red-100"
-                  disabled={voteOnTopPick.isPending}
-                >
-                  <ThumbsDown className="h-4 w-4" />
-                  <span className="sr-only">Downvote</span>
-                </Button>
-                <span className="text-sm font-medium">{topPick.downvotes}</span>
-              </div>
             </div>
             
             <div className="flex items-center justify-between mb-2 text-sm text-muted-foreground">
@@ -119,77 +103,64 @@ const TopPickCard = ({ topPick }: TopPickCardProps) => {
                 )}
               </div>
               
-              <div className="flex gap-2">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant={isMovieWatched(topPick.movie_id) ? "default" : "outline"}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          const movie = {
-                            id: topPick.movie_id,
-                            title: topPick.movie_title,
-                            overview: "",
-                            poster_path: topPick.poster_path || "",
-                            release_date: topPick.release_year ? `${topPick.release_year}-01-01` : "",
-                            vote_average: topPick.rating * 2,
-                            genres: topPick.genres || []
-                          };
-                          toggleWatch.mutate({
-                            movie,
-                            isWatched: !isMovieWatched(topPick.movie_id)
-                          });
-                        }}
-                        disabled={toggleWatch.isPending}
-                        className="h-8 w-8 p-0"
-                        size="sm"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{isMovieWatched(topPick.movie_id) ? 'Remove from watched' : 'Add to watched'}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+              {/* Only show watchlist and watch buttons if not the user's own pick */}
+              {!isOwnPick && (
+                <div className="flex gap-2">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant={isMovieWatched(topPick.movie_id) ? "default" : "outline"}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const movie = createMovieFromTopPick();
+                            toggleWatch.mutate({
+                              movie,
+                              isWatched: !isMovieWatched(topPick.movie_id)
+                            });
+                          }}
+                          disabled={toggleWatch.isPending}
+                          className="h-8 w-8 p-0"
+                          size="sm"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{isMovieWatched(topPick.movie_id) ? 'Remove from watched' : 'Add to watched'}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
 
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant={isInWatchlist(topPick.movie_id) ? "default" : "outline"}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          const movie = {
-                            id: topPick.movie_id,
-                            title: topPick.movie_title,
-                            overview: "",
-                            poster_path: topPick.poster_path || "",
-                            release_date: topPick.release_year ? `${topPick.release_year}-01-01` : "",
-                            vote_average: topPick.rating * 2,
-                            genres: topPick.genres || []
-                          };
-                          toggleWatchlist.mutate({
-                            movie,
-                            isInWatchlist: isInWatchlist(topPick.movie_id)
-                          });
-                        }}
-                        disabled={toggleWatchlist.isPending}
-                        className="h-8 w-8 p-0"
-                        size="sm"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{isInWatchlist(topPick.movie_id) ? 'Remove from watchlist' : 'Add to watchlist'}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant={isInWatchlist(topPick.movie_id) ? "default" : "outline"}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const movie = createMovieFromTopPick();
+                            toggleWatchlist.mutate({
+                              movie,
+                              isInWatchlist: isInWatchlist(topPick.movie_id)
+                            });
+                          }}
+                          disabled={toggleWatchlist.isPending}
+                          className="h-8 w-8 p-0"
+                          size="sm"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{isInWatchlist(topPick.movie_id) ? 'Remove from watchlist' : 'Add to watchlist'}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+              )}
             </div>
             
             {topPick.comment && (
@@ -221,7 +192,7 @@ const TopPickCard = ({ topPick }: TopPickCardProps) => {
   );
 };
 
-type SortOption = "newest" | "oldest" | "rating" | "most_upvoted";
+type SortOption = "newest" | "oldest" | "rating";
 
 const TopPicks = () => {
   const { topPicks, userTopPicks, isLoading } = useTopPicks();
@@ -263,8 +234,6 @@ const TopPicks = () => {
         return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
       case "rating":
         return b.rating - a.rating;
-      case "most_upvoted":
-        return (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes);
       default:
         return 0;
     }
@@ -329,7 +298,6 @@ const TopPicks = () => {
                   <ToggleGroupItem value="newest">Newest</ToggleGroupItem>
                   <ToggleGroupItem value="oldest">Oldest</ToggleGroupItem>
                   <ToggleGroupItem value="rating">Highest Rated</ToggleGroupItem>
-                  <ToggleGroupItem value="most_upvoted">Most Upvoted</ToggleGroupItem>
                 </ToggleGroup>
               </div>
               

@@ -1,5 +1,6 @@
+
 import { useState } from "react";
-import { supabase, updateVoteCount } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getOrCreateAnonymousId } from "@/lib/anonymousUser";
 import { Movie } from "@/types/movie";
@@ -23,6 +24,12 @@ export interface TopPickItem {
 
 export const useTopPicks = () => {
   const queryClient = useQueryClient();
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  
+  // Initialize user ID
+  useState(() => {
+    getOrCreateAnonymousId().then(id => setCurrentUserId(id)).catch(err => console.error(err));
+  });
   
   const { data: topPicks = [], isLoading } = useQuery({
     queryKey: ['topPicks'],
@@ -65,6 +72,7 @@ export const useTopPicks = () => {
         let userId = null;
         try {
           userId = await getOrCreateAnonymousId();
+          setCurrentUserId(userId);
         } catch (error) {
           console.error('Error getting anonymous ID:', error);
           return [];
@@ -154,6 +162,7 @@ export const useTopPicks = () => {
           : "";
         
         const userId = await getOrCreateAnonymousId();
+        setCurrentUserId(userId);
         
         let trailerKey = movie.trailer_key;
         
@@ -266,39 +275,13 @@ export const useTopPicks = () => {
     }
   });
 
-  const voteOnTopPick = useMutation({
-    mutationFn: async ({ 
-      topPickId, 
-      voteType 
-    }: { 
-      topPickId: string, 
-      voteType: 'upvote' | 'downvote'
-    }) => {
-      try {
-        console.log(`Updating ${voteType} count for pick:`, topPickId);
-        await updateVoteCount(topPickId, voteType);
-        return { success: true };
-      } catch (error) {
-        console.error(`Error updating ${voteType} count:`, error);
-        throw error;
-      }
-    },
-    onSuccess: () => {
-      console.log("Vote count updated, refreshing data");
-      queryClient.invalidateQueries({ queryKey: ['topPicks'] });
-    },
-    onError: (error) => {
-      console.error('Vote error:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update vote count",
-        variant: "destructive"
-      });
-    }
-  });
-
   const isMovieInTopPicks = (movieId: number) => {
     return userTopPicks.some(item => item.movie_id === movieId);
+  };
+
+  // Check if a top pick belongs to the current user
+  const isUserTopPick = (topPickUserId: string) => {
+    return currentUserId === topPickUserId;
   };
 
   return {
@@ -310,6 +293,7 @@ export const useTopPicks = () => {
     deleteTopPick,
     isMovieInTopPicks,
     fetchMovieTrailer,
-    voteOnTopPick
+    isUserTopPick,
+    currentUserId
   };
 };

@@ -6,7 +6,7 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://ucdskpmaqrzavtgvvwar.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjZHNrcG1hcXJ6YXZ0Z3Z2d2FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkxODE2NDAsImV4cCI6MjA1NDc1NzY0MH0.Sm_uX3HL9r9hbZXclAbCzqIokVWAtO5pJXUimUs-Wgc";
 
-// Create a custom typed client that includes the functions we need for voting
+// Create a custom typed client that includes the functions we need
 type SupabaseClientWithFunctions = ReturnType<typeof createClient<Database>>;
 
 export const supabase = createClient<Database>(
@@ -25,45 +25,3 @@ export const supabase = createClient<Database>(
     }
   }
 ) as SupabaseClientWithFunctions;
-
-// Simple counter function for upvotes and downvotes
-export const updateVoteCount = async (
-  topPickId: string, 
-  voteType: 'upvote' | 'downvote'
-): Promise<void> => {
-  try {
-    console.log(`Updating ${voteType} count for pick ${topPickId}`);
-    
-    // Get the top pick to update
-    const { data: pick, error: getError } = await supabase
-      .from('top_picks')
-      .select('upvotes, downvotes')
-      .eq('id', topPickId)
-      .single();
-      
-    if (getError) {
-      console.error("Error getting top pick:", getError);
-      throw getError;
-    }
-    
-    // Update the appropriate counter
-    const updateData = voteType === 'upvote' 
-      ? { upvotes: (pick?.upvotes || 0) + 1 }
-      : { downvotes: (pick?.downvotes || 0) + 1 };
-      
-    const { error: updateError } = await supabase
-      .from('top_picks')
-      .update(updateData)
-      .eq('id', topPickId);
-      
-    if (updateError) {
-      console.error(`Error updating ${voteType} count:`, updateError);
-      throw updateError;
-    }
-    
-    console.log(`Successfully incremented ${voteType} count`);
-  } catch (error) {
-    console.error("Error in vote count function:", error);
-    throw error;
-  }
-};
