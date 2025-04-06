@@ -48,7 +48,7 @@ export const updateVoteCount = async (
     
     // Update the appropriate counter
     const updateData = voteType === 'upvote' 
-      ? { upvotes: (pick?.upvotes || J0) + 1 }
+      ? { upvotes: (pick?.upvotes || 0) + 1 }
       : { downvotes: (pick?.downvotes || 0) + 1 };
       
     const { error: updateError } = await supabase
