@@ -107,6 +107,7 @@ export const useWatchlist = () => {
     onSuccess: () => {
       // Also invalidate topPicks queries to refresh the UI
       queryClient.invalidateQueries({ queryKey: ['topPicks'] });
+      queryClient.invalidateQueries({ queryKey: ['userTopPicks'] });
     }
   });
 

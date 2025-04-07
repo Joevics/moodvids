@@ -217,6 +217,7 @@ export const useWatchHistory = () => {
       // Invalidate both watchHistory and topPicks queries to refresh UIs
       queryClient.invalidateQueries({ queryKey: ['watchHistory'] });
       queryClient.invalidateQueries({ queryKey: ['topPicks'] });
+      queryClient.invalidateQueries({ queryKey: ['userTopPicks'] });
     }
   });
 

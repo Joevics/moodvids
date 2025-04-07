@@ -1,10 +1,11 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, QueryFunctionContext } from "@tanstack/react-query";
 import { getOrCreateAnonymousId } from "@/lib/anonymousUser";
 import { Movie } from "@/types/movie";
 import { toast } from "@/hooks/use-toast";
+import { useTMDBMovieDetails } from "./useTMDBMovieDetails";
 
 export interface TopPickItem {
   id: string;
@@ -20,90 +21,71 @@ export interface TopPickItem {
   poster_path?: string;
 }
 
+// Define the page size for lazy loading
+const PAGE_SIZE = 10;
+
 export const useTopPicks = () => {
   const queryClient = useQueryClient();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   
   // Initialize user ID
-  useState(() => {
+  useEffect(() => {
     getOrCreateAnonymousId().then(id => setCurrentUserId(id)).catch(err => console.error(err));
-  });
+  }, []);
+  
+  const fetchTopPicks = async ({ pageParam = 0 }: QueryFunctionContext<[string], number>) => {
+    try {
+      const { data, error } = await supabase
+        .from('top_picks')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .range(pageParam * PAGE_SIZE, (pageParam * PAGE_SIZE) + PAGE_SIZE - 1);
+
+      if (error) throw error;
+      
+      return data as TopPickItem[] || [];
+    } catch (error) {
+      console.error('Error fetching top picks:', error);
+      return [];
+    }
+  };
   
   const { data: topPicks = [], isLoading } = useQuery({
     queryKey: ['topPicks'],
-    queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from('top_picks')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-
-        const picksWithTrailers = await Promise.all((data as TopPickItem[] || []).map(async (pick) => {
-          if (!pick.trailer_key) {
-            const trailer = await fetchMovieTrailer(pick.movie_id);
-            if (trailer) {
-              await supabase
-                .from('top_picks')
-                .update({ trailer_key: trailer })
-                .eq('id', pick.id);
-              return { ...pick, trailer_key: trailer };
-            }
-          }
-          return pick;
-        }));
-        
-        return picksWithTrailers as TopPickItem[] || [];
-      } catch (error) {
-        console.error('Error fetching top picks:', error);
-        return [];
-      }
-    },
+    queryFn: () => fetchTopPicks({ pageParam: 0 }),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  const { data: userTopPicks = [] } = useQuery({
-    queryKey: ['userTopPicks'],
-    queryFn: async () => {
+  const fetchUserTopPicks = async ({ pageParam = 0 }: QueryFunctionContext<[string, string], number>) => {
+    try {
+      let userId = null;
       try {
-        let userId = null;
-        try {
-          userId = await getOrCreateAnonymousId();
-          setCurrentUserId(userId);
-        } catch (error) {
-          console.error('Error getting anonymous ID:', error);
-          return [];
-        }
-
-        const { data, error } = await supabase
-          .from('top_picks')
-          .select('*')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        
-        const picksWithTrailers = await Promise.all((data as TopPickItem[] || []).map(async (pick) => {
-          if (!pick.trailer_key) {
-            const trailer = await fetchMovieTrailer(pick.movie_id);
-            if (trailer) {
-              await supabase
-                .from('top_picks')
-                .update({ trailer_key: trailer })
-                .eq('id', pick.id);
-              return { ...pick, trailer_key: trailer };
-            }
-          }
-          return pick;
-        }));
-        
-        return picksWithTrailers as TopPickItem[] || [];
+        userId = await getOrCreateAnonymousId();
+        setCurrentUserId(userId);
       } catch (error) {
-        console.error('Error fetching user top picks:', error);
+        console.error('Error getting anonymous ID:', error);
         return [];
       }
-    },
+
+      const { data, error } = await supabase
+        .from('top_picks')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .range(pageParam * PAGE_SIZE, (pageParam * PAGE_SIZE) + PAGE_SIZE - 1);
+
+      if (error) throw error;
+      
+      return data as TopPickItem[] || [];
+    } catch (error) {
+      console.error('Error fetching user top picks:', error);
+      return [];
+    }
+  };
+
+  const { data: userTopPicks = [] } = useQuery({
+    queryKey: ['userTopPicks'],
+    queryFn: () => fetchUserTopPicks({ pageParam: 0 }),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
