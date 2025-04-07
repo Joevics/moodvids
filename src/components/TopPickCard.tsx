@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Star, Calendar, MessageSquare, ChevronDown, ChevronUp, Eye, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { TopPickItem } from "@/hooks/useTopPicks";
+import { TopPickItem, useTopPicks } from "@/hooks/useTopPicks";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { useWatchHistory } from "@/hooks/useWatchHistory";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";

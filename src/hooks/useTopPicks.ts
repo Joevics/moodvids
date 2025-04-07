@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient, QueryFunctionContext } from "@tanstack/react-query";
@@ -33,8 +32,10 @@ export const useTopPicks = () => {
     getOrCreateAnonymousId().then(id => setCurrentUserId(id)).catch(err => console.error(err));
   }, []);
   
-  const fetchTopPicks = async ({ pageParam = 0 }: QueryFunctionContext<[string], number>) => {
+  const fetchTopPicks = async (context: QueryFunctionContext<[string], number>) => {
     try {
+      const { pageParam = 0 } = context;
+      
       const { data, error } = await supabase
         .from('top_picks')
         .select('*')
@@ -52,12 +53,14 @@ export const useTopPicks = () => {
   
   const { data: topPicks = [], isLoading } = useQuery({
     queryKey: ['topPicks'],
-    queryFn: () => fetchTopPicks({ pageParam: 0 }),
+    queryFn: () => fetchTopPicks({ pageParam: 0, queryKey: ['topPicks'], meta: {}, signal: new AbortController().signal, direction: 'forward' }),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  const fetchUserTopPicks = async ({ pageParam = 0 }: QueryFunctionContext<[string, string], number>) => {
+  const fetchUserTopPicks = async (context: QueryFunctionContext<[string, string], number>) => {
     try {
+      const { pageParam = 0 } = context;
+      
       let userId = null;
       try {
         userId = await getOrCreateAnonymousId();
@@ -85,7 +88,7 @@ export const useTopPicks = () => {
 
   const { data: userTopPicks = [] } = useQuery({
     queryKey: ['userTopPicks'],
-    queryFn: () => fetchUserTopPicks({ pageParam: 0 }),
+    queryFn: () => fetchUserTopPicks({ pageParam: 0, queryKey: ['userTopPicks', ''], meta: {}, signal: new AbortController().signal, direction: 'forward' }),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
