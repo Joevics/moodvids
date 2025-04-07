@@ -3,10 +3,7 @@ import { useTopPicks } from "@/hooks/useTopPicks";
 import { Loader2, SlidersHorizontal, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { TimePeriodSelector } from "@/components/TimePeriodSelector";
 import { GenreSelector } from "@/components/GenreSelector";
 import { Genre, TimePeriod } from "@/types/movie";
@@ -18,14 +15,13 @@ import { TopPickCard } from "@/components/TopPickCard";
 type SortOption = "newest" | "oldest" | "rating";
 
 const TopPicks = () => {
-  const { topPicks, userTopPicks, isLoading } = useTopPicks();
+  const { topPicks, isLoading } = useTopPicks();
   const { isInWatchlist } = useWatchlist();
   const { isMovieWatched } = useWatchHistory();
   const [selectedGenres, setSelectedGenres] = useState<Genre[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod | undefined>();
   const [sortOption, setSortOption] = useState<SortOption>("newest");
   const [showFilters, setShowFilters] = useState(false);
-  const [activeTab, setActiveTab] = useState("all");
   
   // Setup infinite scroll
   const { setTarget } = useInfiniteScroll({
@@ -84,17 +80,11 @@ const TopPicks = () => {
     setSelectedGenres([]);
     setSelectedPeriod(undefined);
     setSortOption("newest");
-    setShowFilters(false);
   };
   
-  // Apply the filterAlreadyTrackedMovies filter to remove watched/watchlisted movies
-  const filteredCommunityPicks = topPicks
+  // Apply filters to all top picks
+  const filteredTopPicks = topPicks
     .filter(filterAlreadyTrackedMovies)
-    .filter(filterByGenre)
-    .filter(filterByPeriod)
-    .sort(sortPicks);
-    
-  const filteredUserPicks = userTopPicks
     .filter(filterByGenre)
     .filter(filterByPeriod)
     .sort(sortPicks);
@@ -111,131 +101,79 @@ const TopPicks = () => {
     setSelectedPeriod(prev => prev === period ? undefined : period);
   };
 
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-  };
-
   return (
     <div className="container py-4">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Top Picks</h1>
-        <Popover open={showFilters} onOpenChange={setShowFilters}>
-          <PopoverTrigger asChild>
-            <Button 
-              variant="outline" 
-              className="flex items-center gap-2"
-              size="sm"
-            >
-              <SlidersHorizontal className="w-4 h-4" />
-              <span>Filter & Sort</span>
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-96 p-4" align="end">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <h3 className="font-medium">Sort by</h3>
-                <ToggleGroup 
-                  type="single" 
-                  value={sortOption}
-                  onValueChange={(value) => value && setSortOption(value as SortOption)}
-                  className="justify-start"
-                  size="sm"
-                  variant="outline"
-                >
-                  <ToggleGroupItem value="newest">Newest</ToggleGroupItem>
-                  <ToggleGroupItem value="oldest">Oldest</ToggleGroupItem>
-                  <ToggleGroupItem value="rating">Highest Rated</ToggleGroupItem>
-                </ToggleGroup>
-              </div>
-              
-              <div className="space-y-2">
-                <h3 className="font-medium">Time Period</h3>
-                <TimePeriodSelector selectedPeriod={selectedPeriod} onSelect={handlePeriodSelect} />
-              </div>
-              
-              <div className="space-y-2">
-                <h3 className="font-medium">Genres</h3>
-                <GenreSelector selectedGenres={selectedGenres} onSelect={handleGenreSelect} />
-              </div>
-              
-              <div className="pt-2 flex justify-end">
-                <Button 
-                  variant="ghost" 
-                  onClick={resetFilters}
-                  size="sm"
-                >
-                  Reset Filters
-                </Button>
-              </div>
-            </div>
-          </PopoverContent>
-        </Popover>
       </div>
 
-      <Tabs defaultValue="all" className="mb-4" onValueChange={handleTabChange}>
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="all">Community Picks</TabsTrigger>
-          <TabsTrigger value="my">My Recommendations</TabsTrigger>
-        </TabsList>
+      {/* Static Filter Section */}
+      <div className="mb-6 bg-background border rounded-lg p-4 shadow-sm">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-medium text-lg">Filter</h3>
+            <button 
+              onClick={resetFilters}
+              className="text-sm text-primary hover:underline"
+            >
+              Reset All
+            </button>
+          </div>
+          
+          <div className="space-y-2">
+            <h4 className="font-medium">Sort by</h4>
+            <ToggleGroup 
+              type="single" 
+              value={sortOption}
+              onValueChange={(value) => value && setSortOption(value as SortOption)}
+              className="justify-start"
+              size="sm"
+              variant="outline"
+            >
+              <ToggleGroupItem value="newest">Newest</ToggleGroupItem>
+              <ToggleGroupItem value="oldest">Oldest</ToggleGroupItem>
+              <ToggleGroupItem value="rating">Highest Rated</ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+          
+          <div className="space-y-2">
+            <h4 className="font-medium">Time Period</h4>
+            <TimePeriodSelector selectedPeriod={selectedPeriod} onSelect={handlePeriodSelect} />
+          </div>
+          
+          <div className="space-y-2">
+            <h4 className="font-medium">Genres</h4>
+            <GenreSelector selectedGenres={selectedGenres} onSelect={handleGenreSelect} />
+          </div>
+        </div>
+      </div>
 
-        <TabsContent value="all" className="mt-4">
-          <ScrollArea className="h-[calc(100vh-12rem)]">
-            {isLoading ? (
-              <div className="flex items-center justify-center h-64">
-                <Loader2 className="w-8 h-8 animate-spin" />
-              </div>
-            ) : !filteredCommunityPicks.length ? (
-              <div className="text-center py-8 text-muted-foreground">
-                {topPicks.length > 0 
-                  ? "No picks match your filters. Try adjusting your filter criteria."
-                  : "No recommendations available. Be the first to recommend a movie!"}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {filteredCommunityPicks.map((topPick) => (
-                  <TopPickCard key={topPick.id} topPick={topPick} />
-                ))}
-                
-                {/* Loading indicator at the bottom */}
-                <div ref={setTarget} className="py-4 flex justify-center">
-                  {filteredCommunityPicks.length > 0 && activeTab === "all" && (
-                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                  )}
-                </div>
-              </div>
-            )}
-          </ScrollArea>
-        </TabsContent>
-
-        <TabsContent value="my" className="mt-4">
-          <ScrollArea className="h-[calc(100vh-12rem)]">
-            {isLoading ? (
-              <div className="flex items-center justify-center h-64">
-                <Loader2 className="w-8 h-8 animate-spin" />
-              </div>
-            ) : !filteredUserPicks.length ? (
-              <div className="text-center py-8 text-muted-foreground">
-                {userTopPicks.length > 0 
-                  ? "No picks match your filters. Try adjusting your filter criteria."
-                  : "You haven't recommended any movies yet. Rate movies to add them to your picks!"}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {filteredUserPicks.map((topPick) => (
-                  <TopPickCard key={topPick.id} topPick={topPick} />
-                ))}
-                
-                {/* Loading indicator at the bottom */}
-                <div ref={setTarget} className="py-4 flex justify-center">
-                  {filteredUserPicks.length > 0 && activeTab === "my" && (
-                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                  )}
-                </div>
-              </div>
-            )}
-          </ScrollArea>
-        </TabsContent>
-      </Tabs>
+      <ScrollArea className="h-[calc(100vh-24rem)]">
+        {isLoading ? (
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="w-8 h-8 animate-spin" />
+          </div>
+        ) : !filteredTopPicks.length ? (
+          <div className="text-center py-8 text-muted-foreground">
+            {topPicks.length > 0 
+              ? "No picks match your filters. Try adjusting your filter criteria."
+              : "No recommendations available. Be the first to recommend a movie!"}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredTopPicks.map((topPick) => (
+              <TopPickCard key={topPick.id} topPick={topPick} />
+            ))}
+            
+            {/* Loading indicator at the bottom */}
+            <div ref={setTarget} className="py-4 flex justify-center">
+              {filteredTopPicks.length > 0 && (
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              )}
+            </div>
+          </div>
+        )}
+      </ScrollArea>
     </div>
   );
 };
