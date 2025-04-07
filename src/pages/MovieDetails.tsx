@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, Eye, Plus, Star, Calendar, Globe, Search } from "lucide-react";
+import { ChevronLeft, Eye, Plus, Star, Calendar, Globe, Search, Tv } from "lucide-react";
 import { useWatchHistory } from "@/hooks/useWatchHistory";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { useEffect, useState } from "react";
@@ -147,6 +147,23 @@ const MovieDetails = () => {
     return `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`;
   };
 
+  const formatTitleForO2TVSeries = (title: string) => {
+    return title
+      .replace(/[^\w\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-'); // Replace spaces with hyphens
+  };
+
+  const formatTitleForMobileTVShows = (title: string) => {
+    return encodeURIComponent(title); // URL encode the title
+  };
+
+  const generateTvSeriesUrls = (title: string) => {
+    return {
+      mobileTvShows: `https://www.mobiletvshows.site/subfolder-${formatTitleForMobileTVShows(title)}.htm`,
+      o2TvSeries: `https://o2tvseries4.com/${formatTitleForO2TVSeries(title)}/index.html`
+    };
+  };
+
   if (isLoading) {
     return (
       <div className="container py-8">
@@ -228,12 +245,7 @@ const MovieDetails = () => {
     }
   };
 
-  const movieSites = [
-    { name: "Archive.org", site: "archive.org", description: "Free digital library with films and videos" },
-    { name: "FzMovies", site: "fzmovies.net", description: "Streaming site with minimal ads" },
-    { name: "Netflix", site: "netflix.com", description: "Popular subscription streaming service" },
-    { name: "Tubi TV", site: "tubitv.com", description: "Free streaming with ads" }
-  ];
+  const tvSeriesUrls = generateTvSeriesUrls(movie?.title || '');
 
   return (
     <div className="container py-8 max-w-6xl mx-auto">
@@ -423,6 +435,53 @@ const MovieDetails = () => {
                           </div>
                         </a>
                       ))}
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+              
+              <AccordionItem value="find-series" className="border-none">
+                <AccordionTrigger className="py-5 px-5 hover:no-underline bg-gradient-to-r from-blue-600/10 to-purple-600/10 group">
+                  <div className="flex items-center">
+                    <Tv className="w-5 h-5 mr-3 group-hover:animate-pulse text-primary" />
+                    <span className="text-lg font-semibold">Series and Shows</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-5 pb-5 pt-3">
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Try finding "{movie.title}" as a TV series on these platforms:
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <a 
+                        href={tvSeriesUrls.mobileTvShows}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center p-3 rounded-lg bg-background/50 hover:bg-background/80 border border-muted/20 transition-all duration-300 hover:scale-[1.02] group"
+                      >
+                        <div className="bg-primary/10 p-2 rounded-full mr-3">
+                          <Tv className="w-4 h-4 text-primary group-hover:text-primary" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium">Mobile TV Shows</p>
+                          <p className="text-xs text-muted-foreground">TV series download site with mobile-friendly formats</p>
+                        </div>
+                      </a>
+                      
+                      <a 
+                        href={tvSeriesUrls.o2TvSeries}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center p-3 rounded-lg bg-background/50 hover:bg-background/80 border border-muted/20 transition-all duration-300 hover:scale-[1.02] group"
+                      >
+                        <div className="bg-primary/10 p-2 rounded-full mr-3">
+                          <Tv className="w-4 h-4 text-primary group-hover:text-primary" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium">O2TV Series</p>
+                          <p className="text-xs text-muted-foreground">Popular TV series download site with various formats</p>
+                        </div>
+                      </a>
                     </div>
                   </div>
                 </AccordionContent>

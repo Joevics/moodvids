@@ -1,6 +1,6 @@
 
 import { useTopPicks } from "@/hooks/useTopPicks";
-import { Loader2, SlidersHorizontal, AlertCircle } from "lucide-react";
+import { Loader2, SlidersHorizontal, AlertCircle, Filter } from "lucide-react";
 import { useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -11,6 +11,8 @@ import { useWatchlist } from "@/hooks/useWatchlist";
 import { useWatchHistory } from "@/hooks/useWatchHistory";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import { TopPickCard } from "@/components/TopPickCard";
+import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 type SortOption = "newest" | "oldest" | "rating";
 
@@ -21,7 +23,7 @@ const TopPicks = () => {
   const [selectedGenres, setSelectedGenres] = useState<Genre[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod | undefined>();
   const [sortOption, setSortOption] = useState<SortOption>("newest");
-  const [showFilters, setShowFilters] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   
   // Setup infinite scroll
   const { setTarget } = useInfiniteScroll({
@@ -105,48 +107,65 @@ const TopPicks = () => {
     <div className="container py-4">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Top Picks</h1>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => setIsFilterOpen(!isFilterOpen)}
+          className="gap-2"
+        >
+          <Filter className="h-4 w-4" />
+          Filter
+        </Button>
       </div>
 
-      {/* Static Filter Section */}
-      <div className="mb-6 bg-background border rounded-lg p-4 shadow-sm">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-medium text-lg">Filter</h3>
-            <button 
-              onClick={resetFilters}
-              className="text-sm text-primary hover:underline"
-            >
-              Reset All
-            </button>
+      {/* Collapsible Filter Section */}
+      <Collapsible 
+        open={isFilterOpen} 
+        onOpenChange={setIsFilterOpen}
+        className="mb-6"
+      >
+        <CollapsibleContent>
+          <div className="bg-background border rounded-lg p-4 shadow-sm mt-2 transition-all duration-300">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-medium text-lg">Filter</h3>
+                <button 
+                  onClick={resetFilters}
+                  className="text-sm text-primary hover:underline"
+                >
+                  Reset All
+                </button>
+              </div>
+              
+              <div className="space-y-2">
+                <h4 className="font-medium">Sort by</h4>
+                <ToggleGroup 
+                  type="single" 
+                  value={sortOption}
+                  onValueChange={(value) => value && setSortOption(value as SortOption)}
+                  className="justify-start"
+                  size="sm"
+                  variant="outline"
+                >
+                  <ToggleGroupItem value="newest">Newest</ToggleGroupItem>
+                  <ToggleGroupItem value="oldest">Oldest</ToggleGroupItem>
+                  <ToggleGroupItem value="rating">Highest Rated</ToggleGroupItem>
+                </ToggleGroup>
+              </div>
+              
+              <div className="space-y-2">
+                <h4 className="font-medium">Time Period</h4>
+                <TimePeriodSelector selectedPeriod={selectedPeriod} onSelect={handlePeriodSelect} />
+              </div>
+              
+              <div className="space-y-2">
+                <h4 className="font-medium">Genres</h4>
+                <GenreSelector selectedGenres={selectedGenres} onSelect={handleGenreSelect} />
+              </div>
+            </div>
           </div>
-          
-          <div className="space-y-2">
-            <h4 className="font-medium">Sort by</h4>
-            <ToggleGroup 
-              type="single" 
-              value={sortOption}
-              onValueChange={(value) => value && setSortOption(value as SortOption)}
-              className="justify-start"
-              size="sm"
-              variant="outline"
-            >
-              <ToggleGroupItem value="newest">Newest</ToggleGroupItem>
-              <ToggleGroupItem value="oldest">Oldest</ToggleGroupItem>
-              <ToggleGroupItem value="rating">Highest Rated</ToggleGroupItem>
-            </ToggleGroup>
-          </div>
-          
-          <div className="space-y-2">
-            <h4 className="font-medium">Time Period</h4>
-            <TimePeriodSelector selectedPeriod={selectedPeriod} onSelect={handlePeriodSelect} />
-          </div>
-          
-          <div className="space-y-2">
-            <h4 className="font-medium">Genres</h4>
-            <GenreSelector selectedGenres={selectedGenres} onSelect={handleGenreSelect} />
-          </div>
-        </div>
-      </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       <ScrollArea className="h-[calc(100vh-24rem)]">
         {isLoading ? (

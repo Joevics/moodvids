@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
-import { Star, Calendar, MessageSquare, ChevronDown, ChevronUp } from "lucide-react";
+import { Star, Calendar, MessageSquare, ChevronDown, ChevronUp, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { TopPickItem, useTopPicks } from "@/hooks/useTopPicks";
@@ -70,30 +70,35 @@ export const TopPickCard = ({ topPick }: TopPickCardProps) => {
               </h3>
             </div>
             
-            <div className="flex items-center justify-between mb-2 text-sm text-muted-foreground">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center">
-                  <Star className="w-4 h-4 text-yellow-400 mr-1" />
-                  <span>{topPick.rating}/5</span>
-                </div>
-                
-                {topPick.release_year && (
-                  <div className="flex items-center">
-                    <Calendar className="w-4 h-4 mr-1" />
-                    <span>{topPick.release_year}</span>
-                  </div>
-                )}
+            {/* Rating and year */}
+            <div className="flex items-center mb-2 text-sm text-muted-foreground">
+              <div className="flex items-center mr-3">
+                <Star className="w-4 h-4 text-yellow-400 mr-1" />
+                <span>{topPick.rating}/5</span>
               </div>
               
-              {topPick.genres && topPick.genres.length > 0 && (
-                <div className="text-xs">
-                  {topPick.genres[0]}
+              {topPick.release_year && (
+                <div className="flex items-center">
+                  <Calendar className="w-4 h-4 mr-1" />
+                  <span>{topPick.release_year}</span>
                 </div>
               )}
             </div>
             
+            {/* Genre line */}
+            {topPick.genres && topPick.genres.length > 0 && (
+              <div className="flex items-center text-xs mb-2">
+                <Tag className="w-3 h-3 mr-1 text-muted-foreground" />
+                <div className="text-xs text-muted-foreground">
+                  {topPick.genres.slice(0, 3).join(", ")}
+                  {topPick.genres.length > 3 && "..."}
+                </div>
+              </div>
+            )}
+            
+            {/* Comment section */}
             {topPick.comment && (
-              <div className="mt-2">
+              <div className="mt-1">
                 <div className="flex items-center">
                   <Button 
                     variant="ghost" 
