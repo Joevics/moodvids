@@ -17,8 +17,6 @@ export interface TopPickItem {
   trailer_key?: string;
   genres?: string[];
   created_at: string;
-  upvotes: number;
-  downvotes: number;
   poster_path?: string;
 }
 
@@ -180,7 +178,8 @@ export const useTopPicks = () => {
             rating,
             comment,
             trailer_key: trailerKey,
-            genres: movie.genres
+            genres: movie.genres,
+            poster_path: movie.poster_path
           })
           .select()
           .single();

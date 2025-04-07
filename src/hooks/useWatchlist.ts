@@ -1,3 +1,4 @@
+
 import { Movie } from "@/types/movie";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useCallback, useEffect } from "react";
@@ -102,6 +103,10 @@ export const useWatchlist = () => {
         console.error('Error updating watchlist in local storage:', error);
         throw error;
       }
+    },
+    onSuccess: () => {
+      // Also invalidate topPicks queries to refresh the UI
+      queryClient.invalidateQueries({ queryKey: ['topPicks'] });
     }
   });
 

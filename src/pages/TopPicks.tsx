@@ -196,10 +196,21 @@ type SortOption = "newest" | "oldest" | "rating";
 
 const TopPicks = () => {
   const { topPicks, userTopPicks, isLoading } = useTopPicks();
+  const { isInWatchlist } = useWatchlist();
+  const { isMovieWatched } = useWatchHistory();
   const [selectedGenres, setSelectedGenres] = useState<Genre[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod | undefined>();
   const [sortOption, setSortOption] = useState<SortOption>("newest");
   const [showFilters, setShowFilters] = useState(false);
+  
+  // Filter function to remove movies that are in watchlist or watch history
+  const filterAlreadyTrackedMovies = (pick: TopPickItem) => {
+    // Hide movies that are already in watchlist or watched
+    if (isInWatchlist(pick.movie_id) || isMovieWatched(pick.movie_id)) {
+      return false;
+    }
+    return true;
+  };
   
   const filterByGenre = (pick: TopPickItem) => {
     if (selectedGenres.length === 0) return true;
@@ -246,7 +257,9 @@ const TopPicks = () => {
     setShowFilters(false);
   };
   
+  // Apply the filterAlreadyTrackedMovies filter to remove watched/watchlisted movies
   const filteredCommunityPicks = topPicks
+    .filter(filterAlreadyTrackedMovies)
     .filter(filterByGenre)
     .filter(filterByPeriod)
     .sort(sortPicks);

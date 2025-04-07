@@ -213,8 +213,10 @@ export const useWatchHistory = () => {
         throw error;
       }
     },
-    onSettled: () => {
+    onSuccess: () => {
+      // Invalidate both watchHistory and topPicks queries to refresh UIs
       queryClient.invalidateQueries({ queryKey: ['watchHistory'] });
+      queryClient.invalidateQueries({ queryKey: ['topPicks'] });
     }
   });
 
