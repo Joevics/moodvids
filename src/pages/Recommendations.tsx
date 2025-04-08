@@ -2,11 +2,11 @@
 import { useRecommendations } from "@/hooks/useRecommendations";
 import { MovieCard } from "@/components/MovieCard";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2 } from "lucide-react";
+import { Loader2, Film, Tv } from "lucide-react";
 import { useEffect } from "react";
 import { useWatchHistory } from "@/hooks/useWatchHistory";
 import { useWatchlist } from "@/hooks/useWatchlist";
-import { Movie } from "@/types/movie";
+import { Badge } from "@/components/ui/badge";
 
 const Recommendations = () => {
   const { data: recommendations = [], isFetching, refetch, removeRecommendation } = useRecommendations();
@@ -48,12 +48,24 @@ const Recommendations = () => {
         ) : (
           <div className="space-y-4">
             {recommendations.map((movie) => (
-              <MovieCard 
-                key={movie.id} 
-                movie={movie} 
-                onDelete={() => handleDelete(movie.id)}
-                isNew={isNewRecommendation(movie)}
-              />
+              <div key={movie.id} className="relative">
+                {movie.media_type && (
+                  <Badge 
+                    variant="secondary" 
+                    className="absolute top-2 right-2 z-10 flex items-center gap-1"
+                  >
+                    {movie.media_type === 'tv' ? 
+                      <><Tv className="h-3 w-3" /> TV Series</> : 
+                      <><Film className="h-3 w-3" /> Movie</>
+                    }
+                  </Badge>
+                )}
+                <MovieCard 
+                  movie={movie} 
+                  onDelete={() => handleDelete(movie.id)}
+                  isNew={isNewRecommendation(movie)}
+                />
+              </div>
             ))}
           </div>
         )}

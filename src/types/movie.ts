@@ -1,4 +1,3 @@
-
 export interface Movie {
   id: number;
   title: string;
@@ -12,6 +11,7 @@ export interface Movie {
   streaming_options?: StreamingOptions;
   added_at?: string;
   generated_at?: string;
+  media_type?: 'movie' | 'tv';
 }
 
 export interface StreamingOptions {
