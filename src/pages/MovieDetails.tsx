@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,34 +16,29 @@ import { RecommendButton } from "@/components/RecommendButton";
 // Define the movie sites for search options
 const movieSites = [
   {
-    name: "123Movies",
-    site: "123movies",
-    description: "Free streaming site with a wide selection of movies"
+    name: "Netflix",
+    site: "netflix",
+    description: "Premium streaming service with original content"
   },
   {
-    name: "Fmovies",
-    site: "fmovies",
-    description: "Popular streaming site with many recent releases"
+    name: "archive.org",
+    site: "archive.org",
+    description: "Free digital library with classics and public domain films"
   },
   {
-    name: "GoMovies",
-    site: "gomovies",
-    description: "Free movie streaming with minimal ads"
+    name: "fzmovies",
+    site: "fzmovies",
+    description: "Free movie download site with a wide selection"
   },
   {
-    name: "SolarMovie",
-    site: "solarmovie",
-    description: "Large collection of movies and TV shows"
+    name: "Tubi TV",
+    site: "tubitv",
+    description: "Free streaming platform with ads and a large catalog"
   },
   {
-    name: "YesMovies",
-    site: "yesmovies",
-    description: "User-friendly interface with HD movies"
-  },
-  {
-    name: "Putlocker",
-    site: "putlocker",
-    description: "Classic free movie streaming platform"
+    name: "Prime Video",
+    site: "prime video",
+    description: "Amazon's streaming service with movies and shows"
   }
 ];
 
