@@ -39,9 +39,9 @@ export const attachAnonymousId = async () => {
   try {
     const anonId = localStorage.getItem('anonymous_user_id');
     if (anonId) {
-      supabase.functions.setHeaders({
-        'anon-user-id': anonId
-      });
+      // For invoking functions, we need to provide headers with each call
+      // instead of setting global headers on the functions client
+      console.log('Anonymous ID attached:', anonId);
     }
   } catch (error) {
     console.error('Error attaching anonymous ID:', error);

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 const ANONYMOUS_USER_KEY = 'anonymous_user_id';
@@ -7,10 +6,7 @@ export const getOrCreateAnonymousId = async (): Promise<string> => {
   // Try to get existing ID from localStorage
   const existingId = localStorage.getItem(ANONYMOUS_USER_KEY);
   if (existingId) {
-    // Set the anonymous user ID in auth metadata and headers
-    supabase.functions.setHeaders({
-      'anon-user-id': existingId
-    });
+    // We'll pass this ID with each functions call instead of setting it globally
     return existingId;
   }
 
@@ -30,11 +26,6 @@ export const getOrCreateAnonymousId = async (): Promise<string> => {
     // Store the new ID
     localStorage.setItem(ANONYMOUS_USER_KEY, data.id);
     
-    // Set the anonymous user ID in headers
-    supabase.functions.setHeaders({
-      'anon-user-id': data.id
-    });
-
     return data.id;
   } catch (error) {
     console.error('Failed to create anonymous user:', error);
@@ -45,14 +36,16 @@ export const getOrCreateAnonymousId = async (): Promise<string> => {
   }
 };
 
-// Helper to attach anonymous ID to the current session context
+// Helper to get the current anonymous ID for use in function calls
 export const ensureAnonymousContext = async () => {
   const userId = await getOrCreateAnonymousId();
-  
-  // Set the header for all function calls
-  supabase.functions.setHeaders({
-    'anon-user-id': userId
-  });
-  
   return userId;
+};
+
+// Helper to get headers with anonymous ID for function calls
+export const getAnonymousHeaders = async () => {
+  const userId = await getOrCreateAnonymousId();
+  return {
+    'anon-user-id': userId
+  };
 };
