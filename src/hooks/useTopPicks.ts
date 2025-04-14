@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient, QueryFunctionContext } from "@tanstack/react-query";
-import { getOrCreateAnonymousId } from "@/lib/anonymousUser";
+import { getOrCreateAnonymousId, ensureAnonymousContext } from "@/lib/anonymousUser";
 import { Movie } from "@/types/movie";
 import { toast } from "@/hooks/use-toast";
 import { useTMDBMovieDetails } from "./useTMDBMovieDetails";
@@ -29,12 +30,15 @@ export const useTopPicks = () => {
   
   // Initialize user ID
   useEffect(() => {
-    getOrCreateAnonymousId().then(id => setCurrentUserId(id)).catch(err => console.error(err));
+    ensureAnonymousContext().then(id => setCurrentUserId(id)).catch(err => console.error(err));
   }, []);
   
   const fetchTopPicks = async (context: QueryFunctionContext<[string], number>) => {
     try {
       const { pageParam = 0 } = context;
+      
+      // Ensure anonymous context is set for RLS
+      await ensureAnonymousContext();
       
       const { data, error } = await supabase
         .from('top_picks')
@@ -63,7 +67,7 @@ export const useTopPicks = () => {
       
       let userId = null;
       try {
-        userId = await getOrCreateAnonymousId();
+        userId = await ensureAnonymousContext();
         setCurrentUserId(userId);
       } catch (error) {
         console.error('Error getting anonymous ID:', error);
@@ -144,7 +148,7 @@ export const useTopPicks = () => {
           ? movie.release_date.substring(0, 4)
           : "";
         
-        const userId = await getOrCreateAnonymousId();
+        const userId = await ensureAnonymousContext();
         setCurrentUserId(userId);
         
         let trailerKey = movie.trailer_key;

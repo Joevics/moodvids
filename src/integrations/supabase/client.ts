@@ -16,12 +16,37 @@ export const supabase = createClient<Database>(
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      storage: localStorage
+      storage: localStorage,
+      detectSessionInUrl: true,
+      flowType: 'implicit'
     },
     global: {
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'X-Client-Info': 'moodflix'
+      }
+    },
+    realtime: {
+      params: {
+        eventsPerSecond: 10
       }
     }
   }
 ) as SupabaseClientWithFunctions;
+
+// Helper to attach the anonymous user ID to requests
+export const attachAnonymousId = async () => {
+  try {
+    const anonId = localStorage.getItem('anonymous_user_id');
+    if (anonId) {
+      supabase.functions.setHeaders({
+        'anon-user-id': anonId
+      });
+    }
+  } catch (error) {
+    console.error('Error attaching anonymous ID:', error);
+  }
+};
+
+// Initialize by attaching the anonymous ID
+attachAnonymousId();
